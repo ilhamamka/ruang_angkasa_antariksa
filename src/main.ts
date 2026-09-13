@@ -13,6 +13,7 @@ import { parentGuideManager } from './parent-guide.ts';
 import { quizController } from './questions-engine.ts';
 import { kidsPathway } from './game-kids-pathway.ts';
 import { commercial } from './commercial.ts';
+import { confetti } from './confetti.ts';
 
 class SpaceApp {
   private currentScreenId: string = 'screen-home';
@@ -575,7 +576,11 @@ class SpaceApp {
           badgesManager.recordQuizCorrect();
           this.updateHeroStats();
           spaceAudio.playCheer();
-          spaceAudio.speakKids(`Hebat sekali! ${result.question.explanationId}`);
+          confetti.fire(0.5, 0.45, 60);
+          spaceAudio.playRandomPraise();
+          setTimeout(() => {
+            spaceAudio.speakKids(`Hebat sekali! ${result.question.explanationId}`);
+          }, 1500);
         } else {
           target.classList.add('incorrect');
           // Highlight correct button

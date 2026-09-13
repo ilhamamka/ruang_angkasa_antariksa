@@ -6,6 +6,7 @@ import { KID_LEARNING_STAGES, KID_FRUIT_ANALOGIES, PLANET_TRAIN_ORDER } from './
 import { spaceAudio } from './audio.ts';
 import { badgesManager } from './badges-album.ts';
 import { commercial } from './commercial.ts';
+import { confetti } from './confetti.ts';
 
 export class KidsPathwayManager {
   private container: HTMLElement | null = null;
@@ -393,6 +394,7 @@ export class KidsPathwayManager {
           if (praiseBox) praiseBox.style.display = 'flex';
           spaceAudio.playCheer();
           spaceAudio.playRandomPraise();
+          confetti.fire(0.5, 0.45, 60);
           badgesManager.addStar(1);
           badgesManager.addXp(30);
         } else {
@@ -436,6 +438,7 @@ export class KidsPathwayManager {
           this.render();
         } else {
           spaceAudio.playCheer();
+          confetti.fire(0.5, 0.4, 80);
           spaceAudio.speakKids('Horeee! Kereta 8 planet sudah lengkap dan siap meluncur keliling antariksa!');
           this.trainCurrentStep = 0;
           this.render();
@@ -464,6 +467,7 @@ export class KidsPathwayManager {
         if (this.equippedParts.size === 4) {
           setTimeout(() => {
             spaceAudio.playCheer();
+            confetti.fire(0.5, 0.4, 80);
             spaceAudio.speakKids('Luar biasa! Astronot cilik kita sudah memakai baju lengkap dan siap terbang ke luar angkasa!');
           }, 800);
         }
@@ -506,6 +510,7 @@ export class KidsPathwayManager {
       updateCertBtn.addEventListener('click', () => {
         this.kidName = inputName.value.trim() || 'Kadet Cilik';
         spaceAudio.playCheer();
+        confetti.fire(0.5, 0.35, 100);
         spaceAudio.speakKids(`Selamat untuk Kadet ${this.kidName}! Kamu resmi menjadi penjelajah antariksa bintang emas!`);
         this.render();
       });

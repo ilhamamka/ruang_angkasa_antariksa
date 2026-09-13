@@ -656,6 +656,11 @@ export class SpaceSoundEngine {
     if (t.includes('stasiun antariksa') || t.includes('melayang terbang') || t.includes('salto di udara')) return '/audio/stories/l3_zerog.mp3';
     if (t.includes('tebak buah') || t.includes('semangka paling besar') || t.includes('ukuran buah')) return '/audio/stories/l4_scale_quiz.mp3';
     if (t.includes('planet berpasir merah') || t.includes('robot penjelajah cilik') || t.includes('jejak air')) return '/audio/stories/l4_mars_quiz.mp3';
+    // Praises
+    if (t.includes('wah hebat sekali') || t.includes('bintang emas')) return '/audio/stories/praise_hebat.mp3';
+    if (t.includes('calon astronot cilik') || t.includes('pintar sekali')) return '/audio/stories/praise_pintar.mp3';
+    if (t.includes('jawabanmu tepat dan cerdas') || t.includes('luar biasa! jawabanmu')) return '/audio/stories/praise_luarbiasa.mp3';
+    if (t.includes('keren banget! kamu makin pintar') || t.includes('makin pintar menjelajah')) return '/audio/stories/praise_keren.mp3';
     // Fruits
     if (t.includes('bola pantai raksasa') || t.includes('bola api raksasa')) return '/audio/stories/fruit_sun.mp3';
     if (t.includes('biji kacang hijau') || t.includes('merkurius si biji')) return '/audio/stories/fruit_mercury.mp3';
@@ -810,10 +815,10 @@ export class SpaceSoundEngine {
 
   public playRandomPraise() {
     const praises = [
-      'Wah hebat sekali kamu!',
-      'Pintar sekali calon astronot hebat!',
-      'Luar biasa, jawabanmu tepat sekali!',
-      'Keren banget, kamu makin pintar!'
+      'Wah hebat sekali kamu! Bintang emas untukmu!',
+      'Pintar sekali calon astronot cilik kita!',
+      'Luar biasa! Jawabanmu tepat dan cerdas!',
+      'Keren banget! Kamu makin pintar menjelajah antariksa!'
     ];
     const picked = praises[Math.floor(Math.random() * praises.length)];
     this.speakKids(picked);

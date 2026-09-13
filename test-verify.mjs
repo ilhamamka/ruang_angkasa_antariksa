@@ -194,13 +194,19 @@ const storyIds = [
   'l1_sun', 'l1_earth', 'l1_moon', 'l2_song', 'l2_giants',
   'l3_balloon_rocket', 'l3_suit', 'l3_zerog', 'l4_scale_quiz', 'l4_mars_quiz',
   'fruit_sun', 'fruit_mercury', 'fruit_venus', 'fruit_earth', 'fruit_mars',
-  'fruit_jupiter', 'fruit_saturn', 'fruit_uranus', 'fruit_neptune'
+  'fruit_jupiter', 'fruit_saturn', 'fruit_uranus', 'fruit_neptune',
+  'praise_hebat', 'praise_pintar', 'praise_luarbiasa', 'praise_keren'
 ];
 storyIds.forEach(id => {
   assert(existsSync(`public/audio/stories/${id}.mp3`), `File audio MP3 harus ada: ${id}.mp3`);
   assert(existsSync(`public/audio/stories/${id}.m4a`), `File audio M4A harus ada: ${id}.m4a`);
 });
-console.log(`✅ 10. Semua 19 file audio narasi suara asli excited (.mp3 & .m4a) terverifikasi lengkap di public/audio/stories/.\n`);
+console.log(`✅ 10. Semua 23 file audio narasi suara asli excited & praise (.mp3 & .m4a) terverifikasi lengkap di public/audio/stories/.\n`);
+
+// 11. Test Confetti Engine & Worksheets PNG Exporter Exists
+assert(existsSync('src/confetti.ts'), 'Engine confetti src/confetti.ts harus ada');
+import { worksheetsManager } from './src/worksheets.ts';
+assert(typeof worksheetsManager.mount === 'function', 'worksheetsManager.mount harus fungsi');
 
 console.log('🎉 SEMUA PENGUJIAN OTOMATIS BERHASIL DENGAN 100% SUKSES!');
 
