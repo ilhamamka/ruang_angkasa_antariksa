@@ -3271,3 +3271,288 @@ body {
     margin-top: 20px;
   }
 }
+
+/* --- Floating Mascot Voice Narration HUD & Subtitle Bar --- */
+.voice-narration-hud {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(120%);
+  z-index: 99999;
+  max-width: 900px;
+  width: calc(100% - 32px);
+  background: rgba(10, 15, 30, 0.92);
+  border: 1.5px solid rgba(0, 229, 255, 0.4);
+  border-radius: 20px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 24px rgba(0, 229, 255, 0.25);
+  backdrop-filter: blur(20px);
+  transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.voice-narration-hud.active {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.hud-mascot-avatar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(168, 85, 247, 0.25));
+  border: 1.5px solid #00e5ff;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.4);
+}
+
+.hud-avatar-icon {
+  font-size: 26px;
+  animation: mascotBounce 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes mascotBounce {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-3px) scale(1.08); }
+}
+
+.hud-soundwaves {
+  position: absolute;
+  bottom: -4px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2.5px;
+  height: 14px;
+}
+
+.hud-wave-bar {
+  width: 3px;
+  background: #00e5ff;
+  border-radius: 2px;
+  animation: wavePulse 0.6s ease-in-out infinite alternate;
+}
+
+.hud-wave-bar:nth-child(2) {
+  animation-delay: 0.2s;
+  background: #a855f7;
+}
+
+.hud-wave-bar:nth-child(3) {
+  animation-delay: 0.4s;
+  background: #ffd54f;
+}
+
+@keyframes wavePulse {
+  0% { height: 3px; }
+  100% { height: 13px; }
+}
+
+.hud-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.hud-speaker-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #00e5ff;
+  margin-bottom: 2px;
+}
+
+.hud-subtitle-text {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hud-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-hud-action {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-hud-action:hover {
+  background: rgba(0, 229, 255, 0.25);
+  border-color: #00e5ff;
+  transform: scale(1.1);
+}
+
+/* Kids Interactive Activities Extensions */
+.kids-activity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.kids-interactive-panel {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 22px;
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.kids-interactive-panel h3 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Astronaut Dress Up Station */
+.dress-station-area {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 20px;
+  border-radius: 16px;
+}
+
+.astronaut-doll {
+  font-size: 72px;
+  position: relative;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.astronaut-doll.ready {
+  animation: floatZeroG 3s ease-in-out infinite alternate;
+}
+
+@keyframes floatZeroG {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(4deg); }
+  100% { transform: translateY(0) rotate(-4deg); }
+}
+
+.suit-parts-rack {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  flex: 1;
+  min-width: 220px;
+}
+
+.suit-part-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 10px;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.suit-part-btn.equipped {
+  background: rgba(0, 229, 255, 0.2);
+  border: 1.5px solid #00e5ff;
+  color: #00e5ff;
+}
+
+/* Balloon Rocket Experiment Area */
+.balloon-experiment-box {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.balloon-stage {
+  height: 120px;
+  width: 100%;
+  position: relative;
+  border-bottom: 2px dashed rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.balloon-rocket-sprite {
+  font-size: 48px;
+  position: absolute;
+  transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.balloon-rocket-sprite.inflated {
+  font-size: 64px;
+  transform: scale(1.2);
+}
+
+.balloon-rocket-sprite.launched {
+  transform: translateY(-80px) scale(0.9);
+}
+
+@media (max-width: 640px) {
+  .voice-narration-hud {
+    bottom: 12px;
+    padding: 10px 14px;
+    gap: 10px;
+  }
+  .hud-mascot-avatar {
+    width: 42px;
+    height: 42px;
+  }
+  .hud-avatar-icon {
+    font-size: 20px;
+  }
+  .hud-subtitle-text {
+    font-size: 12px;
+  }
+}
+

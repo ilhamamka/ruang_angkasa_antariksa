@@ -623,12 +623,17 @@ export class SolarSystemExplorer {
 
     modal.classList.add('active');
 
+    if (spaceAudio.isAutoNarration()) {
+      spaceAudio.speakKids(analogy.voiceScript);
+    }
+
     modal.querySelector('#btn-repeat-fruit-voice')?.addEventListener('click', () => {
       spaceAudio.speakKids(analogy.voiceScript);
     });
 
     modal.querySelector('#btn-close-fruit-modal')?.addEventListener('click', () => {
       modal!.classList.remove('active');
+      spaceAudio.stopSpeaking();
     });
   }
 
@@ -716,6 +721,10 @@ export class SolarSystemExplorer {
 
     modal.classList.add('active');
 
+    if (spaceAudio.isAutoNarration()) {
+      spaceAudio.speak(planet.audioSpeechId);
+    }
+
     const speechBtn = modal.querySelector('#btn-planet-speech');
     if (speechBtn) {
       speechBtn.addEventListener('click', () => {
@@ -727,6 +736,7 @@ export class SolarSystemExplorer {
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
         modal!.classList.remove('active');
+        spaceAudio.stopSpeaking();
         spaceAudio.playPop(350);
       });
     }

@@ -6,11 +6,18 @@ export class SpaceSoundEngine {
   private soundEnabled: boolean = true;
   private bgmEnabled: boolean = true;
   private bgmTimer: number | null = null;
-  private bgmGain: GainNode | null = null;
   private lang: 'id' | 'en' = 'id';
+  private autoNarration: boolean = true;
+  private isSpeakingState: boolean = false;
+  private currentSpokenText: string = '';
+  private selectedVoice: SpeechSynthesisVoice | null = null;
+  private voicesLoaded: boolean = false;
+  private speakingListeners: Set<(isSpeaking: boolean, text: string) => void> = new Set();
+  private keepAliveTimer: number | null = null;
+  private hudElement: HTMLElement | null = null;
 
   constructor() {
-    // Initialized on first user gesture
+    this.initVoices();
   }
 
   private initCtx() {
@@ -22,12 +29,51 @@ export class SpaceSoundEngine {
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      this.ctx.resume().catch(() => {});
+    }
+  }
+
+  private initVoices() {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    const loadVoices = () => {
+      try {
+        const voices = window.speechSynthesis.getVoices();
+        if (!voices || voices.length === 0) return;
+        this.voicesLoaded = true;
+
+        // Try finding Indonesian voice first
+        const idVoice = voices.find(v => {
+          const l = (v.lang || '').toLowerCase().replace(/_/g, '-');
+          const n = (v.name || '').toLowerCase();
+          return l === 'id-id' || l.startsWith('id') || l.startsWith('in') || n.includes('indonesia') || n.includes('damayanti') || n.includes('gadis');
+        });
+
+        // If in English or fallback
+        const enVoice = voices.find(v => {
+          const l = (v.lang || '').toLowerCase();
+          return l.startsWith('en') && (l.includes('us') || l.includes('gb'));
+        });
+
+        if (this.lang === 'id') {
+          this.selectedVoice = idVoice || null;
+        } else {
+          this.selectedVoice = enVoice || null;
+        }
+      } catch {
+        // Fallback safely
+      }
+    };
+
+    loadVoices();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
     }
   }
 
   public setLanguage(lang: 'id' | 'en') {
     this.lang = lang;
+    this.initVoices();
   }
 
   public getLanguage(): 'id' | 'en' {
@@ -41,6 +87,15 @@ export class SpaceSoundEngine {
 
   public isSoundEnabled(): boolean {
     return this.soundEnabled;
+  }
+
+  public toggleAutoNarration(): boolean {
+    this.autoNarration = !this.autoNarration;
+    return this.autoNarration;
+  }
+
+  public isAutoNarration(): boolean {
+    return this.autoNarration;
   }
 
   public toggleBgm(): boolean {
@@ -57,7 +112,130 @@ export class SpaceSoundEngine {
     return this.bgmEnabled;
   }
 
-  // Tactical sci-fi button click / pop
+  public onSpeakingChange(listener: (isSpeaking: boolean, text: string) => void): () => void {
+    this.speakingListeners.add(listener);
+    return () => this.speakingListeners.delete(listener);
+  }
+
+  private notifySpeaking(isSpeaking: boolean, text: string = '') {
+    this.isSpeakingState = isSpeaking;
+    this.currentSpokenText = text;
+    this.updateHud(isSpeaking, text);
+    this.speakingListeners.forEach(listener => {
+      try { listener(isSpeaking, text); } catch {}
+    });
+  }
+
+  public isSpeaking(): boolean {
+    return this.isSpeakingState;
+  }
+
+  public getSpokenText(): string {
+    return this.currentSpokenText;
+  }
+
+  // --- Visual Mascot Subtitle HUD Bar ---
+  private updateHud(isSpeaking: boolean, text: string) {
+    if (typeof document === 'undefined') return;
+
+    if (!this.hudElement) {
+      this.hudElement = document.getElementById('voice-narration-hud');
+      if (!this.hudElement) {
+        this.hudElement = document.createElement('div');
+        this.hudElement.id = 'voice-narration-hud';
+        this.hudElement.className = 'voice-narration-hud';
+        document.body.appendChild(this.hudElement);
+      }
+    }
+
+    if (!isSpeaking || !text) {
+      this.hudElement.classList.remove('active');
+      return;
+    }
+
+    this.hudElement.innerHTML = `
+      <div class="hud-mascot-avatar">
+        <span class="hud-avatar-icon">🧑‍🚀</span>
+        <div class="hud-soundwaves">
+          <span class="hud-wave-bar"></span>
+          <span class="hud-wave-bar"></span>
+          <span class="hud-wave-bar"></span>
+        </div>
+      </div>
+      <div class="hud-content">
+        <span class="hud-speaker-label">Kak Bintang Sedang Bercerita:</span>
+        <p class="hud-subtitle-text">"${text}"</p>
+      </div>
+      <div class="hud-actions">
+        <button class="btn-hud-action" id="btn-hud-replay" title="Ulangi Suara">🔁</button>
+        <button class="btn-hud-action" id="btn-hud-stop" title="Hentikan Suara">⏹️</button>
+      </div>
+    `;
+
+    this.hudElement.classList.add('active');
+
+    const replayBtn = this.hudElement.querySelector('#btn-hud-replay');
+    if (replayBtn) {
+      replayBtn.addEventListener('click', () => {
+        this.speakKids(text);
+      });
+    }
+
+    const stopBtn = this.hudElement.querySelector('#btn-hud-stop');
+    if (stopBtn) {
+      stopBtn.addEventListener('click', () => {
+        this.stopSpeaking();
+      });
+    }
+  }
+
+  // Stop any active speech cleanly
+  public stopSpeaking() {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
+    if (this.keepAliveTimer) {
+      clearInterval(this.keepAliveTimer);
+      this.keepAliveTimer = null;
+    }
+    this.notifySpeaking(false, '');
+  }
+
+  // Procedural Xylophone / Kalimba syllable blip sequence
+  // Guarantees audible character speech feedback on ANY machine even if TTS is uninstalled
+  private playMascotTones(syllablesCount = 6) {
+    if (!this.soundEnabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    // Sweet child-friendly pentatonic frequencies: C5, D5, E5, G5, A5, C6
+    const notes = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
+    const count = Math.min(Math.max(syllablesCount, 3), 12);
+    const now = this.ctx.currentTime;
+
+    for (let i = 0; i < count; i++) {
+      const noteFreq = notes[i % notes.length];
+      const t = now + i * 0.08;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle'; // warm wooden marimba tone
+      osc.frequency.setValueAtTime(noteFreq, t);
+
+      gain.gain.setValueAtTime(0.08, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t);
+      osc.stop(t + 0.14);
+    }
+  }
+
+  // Tactical button pop
   public playPop(freq = 440) {
     if (!this.soundEnabled) return;
     this.initCtx();
@@ -81,7 +259,7 @@ export class SpaceSoundEngine {
     osc.stop(now + 0.09);
   }
 
-  // Magnetic stage snap / docking sound
+  // Magnetic stage snap
   public playSnap() {
     if (!this.soundEnabled) return;
     this.initCtx();
@@ -105,7 +283,49 @@ export class SpaceSoundEngine {
     osc.stop(now + 0.1);
   }
 
-  // Countdown bleep (800Hz standard, 1400Hz on Liftoff)
+  // Balloon hiss sound for Balloon Rocket experiment
+  public playBalloonHiss(duration = 1.8) {
+    if (!this.soundEnabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    const bufferSize = this.ctx.sampleRate * duration;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1800, this.ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + duration);
+    filter.Q.value = 4.0;
+
+    const gain = this.ctx.createGain();
+    const now = this.ctx.currentTime;
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    noise.start(now);
+    noise.stop(now + duration);
+  }
+
+  // Spacesuit equipment click sound
+  public playSuitEquip() {
+    this.playSnap();
+    setTimeout(() => this.playPop(880), 80);
+  }
+
+  // Countdown bleep
   public playCountdownBeep(isLiftoff = false) {
     if (!this.soundEnabled) return;
     this.initCtx();
@@ -132,7 +352,7 @@ export class SpaceSoundEngine {
     osc.stop(now + (isLiftoff ? 0.42 : 0.16));
   }
 
-  // Roaring rocket thruster ignition using filtered procedural noise
+  // Rocket thruster ignition
   public playRocketRumble(durationSeconds = 3.5) {
     if (!this.soundEnabled) return;
     this.initCtx();
@@ -142,19 +362,17 @@ export class SpaceSoundEngine {
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const data = buffer.getChannelData(0);
 
-    // Generate brown-tinted noise for powerful deep rocket roar
     let lastOut = 0.0;
     for (let i = 0; i < bufferSize; i++) {
       const white = Math.random() * 2 - 1;
       data[i] = (lastOut + (0.02 * white)) / 1.02;
       lastOut = data[i];
-      data[i] *= 3.5; // boost rumble
+      data[i] *= 3.5;
     }
 
     const noise = this.ctx.createBufferSource();
     noise.buffer = buffer;
 
-    // Resonant low-pass filter
     const filter = this.ctx.createBiquadFilter();
     filter.type = 'lowpass';
     filter.frequency.setValueAtTime(140, this.ctx.currentTime);
@@ -175,13 +393,13 @@ export class SpaceSoundEngine {
     noise.stop(now + durationSeconds);
   }
 
-  // Celestial discovery chime chord (Pentatonic space arpeggio)
+  // Celestial discovery chime chord
   public playCelestialChime() {
     if (!this.soundEnabled) return;
     this.initCtx();
     if (!this.ctx) return;
 
-    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, E6
+    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
     notes.forEach((freq, idx) => {
       const delay = idx * 0.09;
       const now = this.ctx!.currentTime + delay;
@@ -202,7 +420,6 @@ export class SpaceSoundEngine {
     });
   }
 
-  // Sci-fi telemetry scanner sweep
   public playScanner() {
     if (!this.soundEnabled) return;
     this.initCtx();
@@ -227,7 +444,6 @@ export class SpaceSoundEngine {
     osc.stop(now + 0.3);
   }
 
-  // Laser / telemetry ping sound
   public playLaserPing() {
     if (!this.soundEnabled) return;
     this.initCtx();
@@ -251,7 +467,6 @@ export class SpaceSoundEngine {
     osc.stop(now + 0.15);
   }
 
-  // Warp speed whoosh
   public playWarpWhoosh() {
     if (!this.soundEnabled) return;
     this.initCtx();
@@ -277,17 +492,16 @@ export class SpaceSoundEngine {
     osc.stop(now + 0.7);
   }
 
-  // Success Fanfare for badge or quiz win
   public playFanfare() {
     if (!this.soundEnabled) return;
     this.initCtx();
     if (!this.ctx) return;
 
     const chords = [
-      { f: 523.25, t: 0 },    // C5
-      { f: 659.25, t: 0.12 }, // E5
-      { f: 783.99, t: 0.24 }, // G5
-      { f: 1046.5, t: 0.40 }  // C6 (held)
+      { f: 523.25, t: 0 },
+      { f: 659.25, t: 0.12 },
+      { f: 783.99, t: 0.24 },
+      { f: 1046.5, t: 0.40 }
     ];
 
     chords.forEach(({ f, t }) => {
@@ -309,14 +523,50 @@ export class SpaceSoundEngine {
     });
   }
 
-  // Ambient Cosmic Space Music Generator (Dreamy Arpeggios & Pad)
+  // Play musical melody for the "Me-Ve-Bu-Ma-Ju-Sa-U-Ne" mnemonic song!
+  public playPlanetSongMelody() {
+    if (!this.soundEnabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    // Cheerful nursery rhyme melody (8 distinct steps)
+    const notes = [
+      { f: 261.63, d: 0.25, t: 0.00 }, // Me (Merkurius)
+      { f: 293.66, d: 0.25, t: 0.28 }, // Ve (Venus)
+      { f: 329.63, d: 0.25, t: 0.56 }, // Bu (Bumi)
+      { f: 349.23, d: 0.25, t: 0.84 }, // Ma (Mars)
+      { f: 392.00, d: 0.35, t: 1.15 }, // Ju (Jupiter)
+      { f: 440.00, d: 0.35, t: 1.55 }, // Sa (Saturnus)
+      { f: 493.88, d: 0.35, t: 1.95 }, // U  (Uranus)
+      { f: 523.25, d: 0.60, t: 2.35 }  // Ne (Neptunus!)
+    ];
+
+    notes.forEach(n => {
+      const now = this.ctx!.currentTime + n.t;
+      const osc = this.ctx!.createOscillator();
+      const gain = this.ctx!.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(n.f, now);
+
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + n.d);
+
+      osc.connect(gain);
+      gain.connect(this.ctx!.destination);
+
+      osc.start(now);
+      osc.stop(now + n.d + 0.05);
+    });
+  }
+
   public startBgm() {
     if (!this.bgmEnabled) return;
     this.initCtx();
     if (!this.ctx) return;
-    if (this.bgmTimer) return; // already playing
+    if (this.bgmTimer) return;
 
-    const scale = [261.63, 329.63, 392.00, 493.88, 523.25, 659.25]; // C, E, G, B, C, E
+    const scale = [261.63, 329.63, 392.00, 493.88, 523.25, 659.25];
     let step = 0;
 
     const playNextNote = () => {
@@ -353,59 +603,119 @@ export class SpaceSoundEngine {
     }
   }
 
-  // Web Speech API for voice narration in Indonesian / English
+  // --- Triple-Layer Voice Narration Engine ---
+  // Works with native SpeechSynthesis + Fallback Mascot Tones + Live Subtitles
   public speak(text: string, overrideLang?: 'id' | 'en') {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    try {
-      window.speechSynthesis.cancel(); // cancel any active speech
-      const utterance = new SpeechSynthesisUtterance(text);
-      const targetLang = overrideLang || this.lang;
-      utterance.lang = targetLang === 'id' ? 'id-ID' : 'en-US';
-      utterance.rate = 0.95; // child-friendly pacing
-      utterance.pitch = 1.05; // slightly friendly high pitch
+    if (!this.soundEnabled || !text) return;
+    this.speakInternal(text, 0.95, 1.05, overrideLang);
+  }
 
-      // Try picking standard native voice
-      const voices = window.speechSynthesis.getVoices();
-      const langPrefix = targetLang === 'id' ? 'id' : 'en';
-      const bestVoice = voices.find(v => v.lang.toLowerCase().startsWith(langPrefix));
-      if (bestVoice) {
-        utterance.voice = bestVoice;
+  public speakKids(text: string, onEnd?: () => void) {
+    if (!this.soundEnabled || !text) return;
+    // Friendly, patient cadence for children
+    this.speakInternal(text, 0.88, 1.22, undefined, onEnd);
+  }
+
+  private speakInternal(text: string, rate = 0.9, pitch = 1.15, overrideLang?: 'id' | 'en', onEnd?: () => void) {
+    if (typeof window === 'undefined') return;
+
+    // 1. Play immediate warm mascot tone blips for guaranteed audible sensory feedback
+    this.playMascotTones(Math.round(text.length / 8));
+
+    // 2. Display live subtitle banner
+    this.notifySpeaking(true, text);
+
+    if (!('speechSynthesis' in window)) {
+      setTimeout(() => {
+        this.notifySpeaking(false, '');
+        if (onEnd) onEnd();
+      }, Math.max(text.length * 75, 1200));
+      return;
+    }
+
+    try {
+      // Cancel previous utterance
+      window.speechSynthesis.cancel();
+      if (this.keepAliveTimer) {
+        clearInterval(this.keepAliveTimer);
+        this.keepAliveTimer = null;
       }
 
-      window.speechSynthesis.speak(utterance);
+      // Chromium bug #883447: asynchronous delay after cancel() prevents speech engine freezing
+      setTimeout(() => {
+        try {
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+
+          const utterance = new SpeechSynthesisUtterance(text);
+          // Retain global reference on window to prevent V8 Garbage Collector cutting off speech
+          (window as unknown as { __activeSpaceUtterance?: SpeechSynthesisUtterance }).__activeSpaceUtterance = utterance;
+
+          const targetLang = overrideLang || this.lang;
+
+          // Find appropriate voice
+          if (!this.voicesLoaded) {
+            this.initVoices();
+          }
+
+          if (this.selectedVoice) {
+            utterance.voice = this.selectedVoice;
+            utterance.lang = this.selectedVoice.lang;
+          } else {
+            // If no specific voice matched, set target language tag
+            utterance.lang = targetLang === 'id' ? 'id-ID' : 'en-US';
+          }
+
+          utterance.rate = rate;
+          utterance.pitch = pitch;
+
+          utterance.onstart = () => {
+            this.notifySpeaking(true, text);
+          };
+
+          utterance.onend = () => {
+            if (this.keepAliveTimer) {
+              clearInterval(this.keepAliveTimer);
+              this.keepAliveTimer = null;
+            }
+            this.notifySpeaking(false, '');
+            if (onEnd) onEnd();
+          };
+
+          utterance.onerror = () => {
+            if (this.keepAliveTimer) {
+              clearInterval(this.keepAliveTimer);
+              this.keepAliveTimer = null;
+            }
+            this.notifySpeaking(false, '');
+            if (onEnd) onEnd();
+          };
+
+          // Chromium 15-second speech keep-alive
+          this.keepAliveTimer = window.setInterval(() => {
+            if (window.speechSynthesis.speaking && window.speechSynthesis.paused) {
+              window.speechSynthesis.resume();
+            }
+          }, 2500);
+
+          window.speechSynthesis.speak(utterance);
+        } catch {
+          this.notifySpeaking(false, '');
+          if (onEnd) onEnd();
+        }
+      }, 50);
     } catch {
-      // Graceful fallback
+      this.notifySpeaking(false, '');
+      if (onEnd) onEnd();
     }
   }
 
-  // Cheerful kid-friendly voice modulation (slower rate, slightly higher pitch)
-  public speakKids(text: string) {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = this.lang === 'id' ? 'id-ID' : 'en-US';
-      utterance.rate = 0.88; // gentle, patient pacing for early learners
-      utterance.pitch = 1.25; // cheerful, friendly, animated pitch
-
-      const voices = window.speechSynthesis.getVoices();
-      const langPrefix = this.lang === 'id' ? 'id' : 'en';
-      const bestVoice = voices.find(v => v.lang.toLowerCase().startsWith(langPrefix));
-      if (bestVoice) utterance.voice = bestVoice;
-
-      window.speechSynthesis.speak(utterance);
-    } catch {
-      // Graceful fallback
-    }
-  }
-
-  // Cheerful kids applause / celebration chime
   public playCheer() {
     this.playFanfare();
     this.playPop(880);
   }
 
-  // Random Indonesian verbal praise for children
   public playRandomPraise() {
     const praises = [
       'Wah hebat sekali kamu!',

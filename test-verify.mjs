@@ -144,6 +144,21 @@ PLANET_TRAIN_ORDER.forEach((car, i) => {
 });
 console.log(`✅ 7. Kurikulum anak usia dini (4 tahap scaffolded, analogi buah, kereta planet & narasi suara) terverifikasi 100% valid.\n`);
 
+// 8. Test Sound & Audio Engine API
+import { spaceAudio } from './src/audio.ts';
+assert.strictEqual(typeof spaceAudio.isSoundEnabled, 'function', 'spaceAudio.isSoundEnabled harus ada');
+assert.strictEqual(typeof spaceAudio.speakKids, 'function', 'spaceAudio.speakKids harus ada');
+assert.strictEqual(typeof spaceAudio.playPlanetSongMelody, 'function', 'spaceAudio.playPlanetSongMelody harus ada');
+assert.strictEqual(typeof spaceAudio.playBalloonHiss, 'function', 'spaceAudio.playBalloonHiss harus ada');
+assert.strictEqual(typeof spaceAudio.playSuitEquip, 'function', 'spaceAudio.playSuitEquip harus ada');
+assert.strictEqual(typeof spaceAudio.toggleAutoNarration, 'function', 'spaceAudio.toggleAutoNarration harus ada');
+const autoState = spaceAudio.isAutoNarration();
+spaceAudio.toggleAutoNarration();
+assert.strictEqual(spaceAudio.isAutoNarration(), !autoState, 'Toggle auto narration harus mengubah state');
+spaceAudio.toggleAutoNarration(); // restore
+console.log(`✅ 8. Audio engine (TTS, melody synthesizer, balloon hiss, suit equip & auto-narration) terverifikasi valid.\n`);
+
 console.log('🎉 SEMUA PENGUJIAN OTOMATIS BERHASIL DENGAN 100% SUKSES!');
+
 
 

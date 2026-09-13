@@ -553,7 +553,7 @@ export class RocketLabSimulator {
     const igniteBtn = this.container?.querySelector('#btn-ignite') as HTMLButtonElement;
     if (igniteBtn) igniteBtn.disabled = true;
 
-    let count = 10;
+    let count = 5;
 
     const tick = () => {
       if (!banner) return;
@@ -561,12 +561,16 @@ export class RocketLabSimulator {
         banner.textContent = `T-MINUS ${count} DETIK`;
         banner.classList.add('pulse');
         spaceAudio.playCountdownBeep(false);
+        if (count <= 3) {
+          spaceAudio.speakKids(`${count}`);
+        }
         count--;
         setTimeout(tick, 950);
       } else {
         banner.textContent = `🚀 LIFTOFF! SEMBURAN MESIN PENUH!`;
         spaceAudio.playCountdownBeep(true);
         spaceAudio.playRocketRumble(7.0);
+        spaceAudio.speakKids('Meluncur! Mesin roket menyala penuh!');
 
         // Turn on particle exhaust and dynamic light
         if (this.flameParticles) this.flameParticles.visible = true;
@@ -587,6 +591,9 @@ export class RocketLabSimulator {
       modal.className = 'cosmic-modal-overlay active';
       document.body.appendChild(modal);
     }
+
+    spaceAudio.playFanfare();
+    spaceAudio.speakKids('Horeee! Misi luar angkasa sukses gemilang! Roketmu berhasil masuk ke orbit Bumi!');
 
     modal.innerHTML = `
       <div class="cosmic-modal-card celebration-card">
