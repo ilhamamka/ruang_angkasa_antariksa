@@ -189,32 +189,18 @@ assert(gateQ.question.includes('Berapa'), 'Soal gate orang tua harus berisi pert
 assert(typeof gateQ.answer === 'number' && gateQ.answer > 0, 'Jawaban gate harus berupa bilangan positif');
 console.log(`✅ 9. Sistem komersial, lisensi VIP (kode promo & voucher), dan parental safety gate terverifikasi valid.\n`);
 
-// 10. Check all pre-rendered natural audio files exist
-const requiredAudios = [
-  'public/audio/stories/l1_sun.m4a',
-  'public/audio/stories/l1_earth.m4a',
-  'public/audio/stories/l1_moon.m4a',
-  'public/audio/stories/l2_song.m4a',
-  'public/audio/stories/l2_giants.m4a',
-  'public/audio/stories/l3_balloon_rocket.m4a',
-  'public/audio/stories/l3_suit.m4a',
-  'public/audio/stories/l3_zerog.m4a',
-  'public/audio/stories/l4_scale_quiz.m4a',
-  'public/audio/stories/l4_mars_quiz.m4a',
-  'public/audio/stories/fruit_sun.m4a',
-  'public/audio/stories/fruit_mercury.m4a',
-  'public/audio/stories/fruit_venus.m4a',
-  'public/audio/stories/fruit_earth.m4a',
-  'public/audio/stories/fruit_mars.m4a',
-  'public/audio/stories/fruit_jupiter.m4a',
-  'public/audio/stories/fruit_saturn.m4a',
-  'public/audio/stories/fruit_uranus.m4a',
-  'public/audio/stories/fruit_neptune.m4a'
+// 10. Check all pre-rendered natural excited audio files exist (.mp3 and .m4a)
+const storyIds = [
+  'l1_sun', 'l1_earth', 'l1_moon', 'l2_song', 'l2_giants',
+  'l3_balloon_rocket', 'l3_suit', 'l3_zerog', 'l4_scale_quiz', 'l4_mars_quiz',
+  'fruit_sun', 'fruit_mercury', 'fruit_venus', 'fruit_earth', 'fruit_mars',
+  'fruit_jupiter', 'fruit_saturn', 'fruit_uranus', 'fruit_neptune'
 ];
-requiredAudios.forEach(aud => {
-  assert(existsSync(aud), `File audio resmi harus ada: ${aud}`);
+storyIds.forEach(id => {
+  assert(existsSync(`public/audio/stories/${id}.mp3`), `File audio MP3 harus ada: ${id}.mp3`);
+  assert(existsSync(`public/audio/stories/${id}.m4a`), `File audio M4A harus ada: ${id}.m4a`);
 });
-console.log(`✅ 10. Semua 19 file audio narasi suara asli (.m4a) terverifikasi lengkap di public/audio/stories/.\n`);
+console.log(`✅ 10. Semua 19 file audio narasi suara asli excited (.mp3 & .m4a) terverifikasi lengkap di public/audio/stories/.\n`);
 
 console.log('🎉 SEMUA PENGUJIAN OTOMATIS BERHASIL DENGAN 100% SUKSES!');
 

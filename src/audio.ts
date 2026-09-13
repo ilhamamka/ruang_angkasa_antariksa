@@ -643,29 +643,29 @@ export class SpaceSoundEngine {
 
   private currentHtmlAudio: HTMLAudioElement | null = null;
 
-  // Map Indonesian text snippets to crisp pre-rendered studio audio files
+  // Map Indonesian text snippets to crisp pre-rendered excited studio audio files
   private getMatchingStoryAudio(text: string): string | null {
     const t = text.toLowerCase();
-    if (t.includes('bintang yang paling dekat') || t.includes('lampu kamar raksasa')) return '/audio/stories/l1_sun.m4a';
-    if (t.includes('planet kita tercinta') || t.includes('penuh dengan air laut')) return '/audio/stories/l1_earth.m4a';
-    if (t.includes('teman setia bumi di malam hari') || t.includes('senyuman sabit')) return '/audio/stories/l1_moon.m4a';
-    if (t.includes('ayo nyanyikan bersama') || t.includes('me-ve-bu-ma-ju-sa-u-ne')) return '/audio/stories/l2_song.m4a';
-    if (t.includes('dua raksasa yang sangat baik hati') || t.includes('batu antariksa')) return '/audio/stories/l2_giants.m4a';
-    if (t.includes('meniup balon lalu melepasnya') || t.includes('aksi dan reaksi')) return '/audio/stories/l3_balloon_rocket.m4a';
-    if (t.includes('memakai baju putih bertekanan') || t.includes('kaca helmnya dilapisi')) return '/audio/stories/l3_suit.m4a';
-    if (t.includes('pesawat stasiun antariksa') || t.includes('salto di udara')) return '/audio/stories/l3_zerog.m4a';
-    if (t.includes('siapakah planet yang ukurannya paling raksasa') || t.includes('semangka')) return '/audio/stories/l4_scale_quiz.m4a';
-    if (t.includes('tanahnya merah berkarat') || t.includes('robot-robot kecil')) return '/audio/stories/l4_mars_quiz.m4a';
+    if (t.includes('bintang raksasa') || t.includes('bintang yang paling dekat') || t.includes('matahari adalah')) return '/audio/stories/l1_sun.mp3';
+    if (t.includes('bumi, rumah kita') || t.includes('planet kita tercinta')) return '/audio/stories/l1_earth.mp3';
+    if (t.includes('bulan si sahabat') || t.includes('teman setia bumi') || t.includes('senyuman sabit')) return '/audio/stories/l1_moon.mp3';
+    if (t.includes('kereta delapan planet') || t.includes('me-ve-bu-ma-ju-sa-u-ne') || t.includes('jembatan keledai') || t.includes('bernyanyi bersama')) return '/audio/stories/l2_song.mp3';
+    if (t.includes('kakak jupiter') || t.includes('dua raksasa') || t.includes('cincin es saturnus')) return '/audio/stories/l2_giants.mp3';
+    if (t.includes('siap-siap meluncur') || t.includes('meniup balon') || t.includes('roket balon') || t.includes('terbang tinggi')) return '/audio/stories/l3_balloon_rocket.mp3';
+    if (t.includes('baju astronot') || t.includes('helmnya dilapisi') || t.includes('baju putih')) return '/audio/stories/l3_suit.mp3';
+    if (t.includes('stasiun antariksa') || t.includes('melayang terbang') || t.includes('salto di udara')) return '/audio/stories/l3_zerog.mp3';
+    if (t.includes('tebak buah') || t.includes('semangka paling besar') || t.includes('ukuran buah')) return '/audio/stories/l4_scale_quiz.mp3';
+    if (t.includes('planet berpasir merah') || t.includes('robot penjelajah cilik') || t.includes('jejak air')) return '/audio/stories/l4_mars_quiz.mp3';
     // Fruits
-    if (t.includes('bola api raksasa yang sangat ramah')) return '/audio/stories/fruit_sun.m4a';
-    if (t.includes('biji kacang hijau')) return '/audio/stories/fruit_mercury.m4a';
-    if (t.includes('selimut awan kuning')) return '/audio/stories/fruit_venus.m4a';
-    if (t.includes('ceri kecil berwarna biru') || t.includes('rumah kita tercinta! warnanya biru')) return '/audio/stories/fruit_earth.m4a';
-    if (t.includes('mars si planet merah')) return '/audio/stories/fruit_mars.m4a';
-    if (t.includes('raja semangka raksasa')) return '/audio/stories/fruit_jupiter.m4a';
-    if (t.includes('putri mahkota melon')) return '/audio/stories/fruit_saturn.m4a';
-    if (t.includes('apel hijau beku')) return '/audio/stories/fruit_uranus.m4a';
-    if (t.includes('buah blueberry biru')) return '/audio/stories/fruit_neptune.m4a';
+    if (t.includes('bola pantai raksasa') || t.includes('bola api raksasa')) return '/audio/stories/fruit_sun.mp3';
+    if (t.includes('biji kacang hijau') || t.includes('merkurius si biji')) return '/audio/stories/fruit_mercury.mp3';
+    if (t.includes('anggur kuning') || t.includes('selimut awan')) return '/audio/stories/fruit_venus.mp3';
+    if (t.includes('ceri biru') || t.includes('ceri kecil')) return '/audio/stories/fruit_earth.mp3';
+    if (t.includes('stroberi merah ceria') || t.includes('mars si buah stroberi') || t.includes('mars si planet merah')) return '/audio/stories/fruit_mars.mp3';
+    if (t.includes('raja semangka') || t.includes('semangka raksasa')) return '/audio/stories/fruit_jupiter.mp3';
+    if (t.includes('melon bermahkota') || t.includes('putri mahkota melon')) return '/audio/stories/fruit_saturn.mp3';
+    if (t.includes('apel hijau es') || t.includes('apel hijau beku')) return '/audio/stories/fruit_uranus.mp3';
+    if (t.includes('blueberry biru laut') || t.includes('buah blueberry')) return '/audio/stories/fruit_neptune.mp3';
     return null;
   }
 
@@ -674,16 +674,17 @@ export class SpaceSoundEngine {
     this.soundEnabled = true;
     this.updateSoundToggleUi();
 
-    // 1. Natural Audio File: Guaranteed clear Indonesian voice on all devices
+    // 1. Natural Audio File: High-energy, excited, cheerful child voice
     const matchedFile = this.getMatchingStoryAudio(text);
     if (matchedFile && typeof Audio !== 'undefined') {
       try {
         this.stopSpeaking();
         this.initCtx();
         this.notifySpeaking(true, text);
-        this.playPop(520);
+        this.playPop(620);
 
         const audio = new Audio(matchedFile);
+        audio.playbackRate = 1.06; // lively and animated cartoon character tempo
         this.currentHtmlAudio = audio;
 
         audio.onended = () => {
@@ -694,12 +695,12 @@ export class SpaceSoundEngine {
 
         audio.onerror = () => {
           this.currentHtmlAudio = null;
-          this.speakInternal(text, 0.96, 1.05, undefined, onEnd);
+          this.speakInternal(text, 1.02, 1.1, undefined, onEnd);
         };
 
         audio.play().catch(() => {
           // Fall back to Web Speech API
-          this.speakInternal(text, 0.96, 1.05, undefined, onEnd);
+          this.speakInternal(text, 1.02, 1.1, undefined, onEnd);
         });
         return;
       } catch {
@@ -707,8 +708,8 @@ export class SpaceSoundEngine {
       }
     }
 
-    // 2. Fallback to Web Speech API
-    this.speakInternal(text, 0.95, 1.05, undefined, onEnd);
+    // 2. Fallback to Web Speech API with upbeat enthusiastic pitch & rate
+    this.speakInternal(text, 1.02, 1.1, undefined, onEnd);
   }
 
   private speakInternal(text: string, rate = 0.96, pitch = 1.05, overrideLang?: 'id' | 'en', onEnd?: () => void) {

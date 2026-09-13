@@ -1,87 +1,85 @@
 import { execSync } from 'child_process';
-import { existsSync, mkdirSync, unlinkSync } from 'fs';
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
 import path from 'path';
 
-// Generate audio files for kid curriculum stories & fruit analogies
+// High-Energy, Excited, Cheerful Kid-Friendly Indonesian Stories (Numberblocks/Alphablocks Style)
 const stories = [
-  // 10 Lessons
   {
     id: 'l1_sun',
-    text: 'Matahari adalah bintang yang paling dekat dengan kita. Dia selalu bangun pagi untuk menyinari bumi, membuat bunga-bunga mekar dan memberi kita kehangatan untuk bermain!'
+    text: 'Halo teman-teman! Wah, lihat! Matahari adalah bola bintang raksasa yang sangat hangat dan ramah! Dia bangun pagi untuk menyinari bumi kita agar kita bisa bermain ceria di siang hari! Hangat sekali ya!'
   },
   {
     id: 'l1_earth',
-    text: 'Bumi adalah planet kita tercinta! Warnanya biru karena banyak lautan air yang jernih, dan hijau karena banyak pohon-pohon rindang.'
+    text: 'Yaaay! Ini dia Bumi, rumah kita tercinta! Lihat, warnanya biru cantik karena penuh lautan air jernih, dan hijau penuh pohon rindang tempat kita bernapas segar!'
   },
   {
     id: 'l1_moon',
-    text: 'Bulan adalah teman setia Bumi di malam hari. Bulan suka menyapa kita dengan senyuman sabit melengkung yang cantik di langit malam bertabur bintang.'
+    text: 'Waaah, lihat ke atas langit malam! Ada Bulan si sahabat malam yang manis! Kadang dia tersenyum melengkung seperti biskuit sabit yang renyah! Cantik sekali ya!'
   },
   {
     id: 'l2_song',
-    text: 'Ayo nyanyikan bersama: Merkurius satu, Venus dua, Bumi tiga, Mars empat, Jupiter lima, Saturnus enam, Uranus tujuh, dan Neptunus delapan! Me-Ve-Bu-Ma-Ju-Sa-U-Ne!'
+    text: 'Horeee! Ayo kita bernyanyi bersama kereta delapan planet! Me! Ve! Bu! Ma! Ju! Sa! U! Ne! Merkurius, Venus, Bumi, Mars, Jupiter, Saturnus, Uranus, Neptunus! Siap meluncur!'
   },
   {
     id: 'l2_giants',
-    text: 'Jupiter dan Saturnus adalah dua raksasa yang sangat baik hati. Gravitasi besar mereka sering melindungi Bumi dari lemparan batu antariksa liar lho!'
+    text: 'Wooooow, besar sekali! Ini dia Kakak Jupiter yang perkasa dan Putri Saturnus yang cantik! Lihat, mahkota cincin es Saturnus berkilauan menari di angkasa!'
   },
   {
     id: 'l3_balloon_rocket',
-    text: 'Pernahkah kamu meniup balon lalu melepasnya? Balon akan melesat terbang kencang! Nah, mesin roket juga membakar bahan bakar dan menyemburkan gas ke bawah agar roket bisa terbang ke antariksa!'
+    text: 'Siap-siap meluncur! Tiga! Dua! Satu! Fwoooosh! Roket menyemburkan api dan gas deras ke bawah, lalu roket melesat terbang tinggi ke atas langit bintang! Kereeen!'
   },
   {
     id: 'l3_suit',
-    text: 'Astronot memakai baju putih bertekanan lengkap dengan helm kaca pelindung. Kaca helmnya dilapisi sedikit emas murni tipis agar mata astronot tidak silau melihat cahaya matahari di angkasa!'
+    text: 'Keren banget! Ayo pakai baju astronot ajaib! Helmnya dilapisi emas murni tipis anti silau, dan tas punggungnya membawa udara napas segar! Kadet siap melangkah!'
   },
   {
     id: 'l3_zerog',
-    text: 'Di dalam pesawat stasiun antariksa, para astronot bisa berputar salto di udara tanpa takut jatuh! Air minum mereka tidak mengalir di gelas, melainkan membentuk bola-bola air yang bisa ditangkap melayang!'
+    text: 'Yipiii! Di stasiun antariksa kita bisa melayang terbang bebas seperti superhero! Air minum melayang seperti gelembung balon, hap, kita tangkap di udara!'
   },
   {
     id: 'l4_scale_quiz',
-    text: 'Ayo kita uji ingatan cerdasmu! Siapakah planet yang ukurannya paling raksasa seperti semangka besar?'
+    text: 'Tebak buah kosmik! Siapakah planet raksasa yang tubuhnya sebesar semangka paling besar di tata surya kita? Ayo tebak cepat!'
   },
   {
     id: 'l4_mars_quiz',
-    text: 'Planet apakah yang tanahnya merah berkarat dan sering dikunjungi robot-robot kecil dari Bumi?'
+    text: 'Siapakah planet berpasir merah yang punya robot penjelajah cilik beroda enam sedang mencari jejak air? Ayo temukan si planet merah!'
   },
-
-  // 9 Fruit analogies
+  // 9 Fruit Analogies
   {
     id: 'fruit_sun',
-    text: 'Halo teman kecil! Matahari adalah bola api raksasa yang sangat ramah. Dia seperti lampu kamar raksasa yang menyinari Bumi agar kita bisa bermain di siang hari!'
+    text: 'Wah, luar biasa! Matahari ini seperti bola pantai raksasa yang menyala terang benderang di tengah meja piknik semesta!'
   },
   {
     id: 'fruit_mercury',
-    text: 'Aku Merkurius! Tubuhku kecil seperti biji kacang hijau. Aku berputar paling dekat dengan Matahari, jadi siang hariku sangat panas seperti wajan penggorengan!'
+    text: 'Hai, aku Merkurius si biji kacang hijau mungil! Aku berlari paling kencang mengelilingi matahari, wuuush cepat sekali!'
   },
   {
     id: 'fruit_venus',
-    text: 'Halo! Aku Venus, planet yang memakai selimut awan kuning tebal. Selimutku membuat tubuhku sangat panas, lebih panas dari oven pemanggang kue!'
+    text: 'Halo, aku Venus si anggur kuning! Selimut awanku tebal sekali, membuat tubuhku hangat dan bersinar paling terang di langit sore!'
   },
   {
     id: 'fruit_earth',
-    text: 'Ini Bumi, rumah kita tercinta! Warnanya biru cantik karena penuh dengan air laut. Kita bisa bernapas, berlari di taman, dan bermain dengan teman-teman di sini!'
+    text: 'Ini dia Bumi kita yang manis seperti buah ceri biru! Rumah terindah di seluruh alam semesta tempat kita tertawa bahagia!'
   },
   {
     id: 'fruit_mars',
-    text: 'Aku Mars si planet merah! Permukaanku berpasir merah ceria. Di sini ada robot lucu beroda enam bernama Curiosity yang sedang berjalan-jalan mencari jejak air!'
+    text: 'Halo kawan, aku Mars si buah stroberi merah ceria! Pasirku merah eksotis dan aku suka disapa robot-robot kecil dari Bumi!'
   },
   {
     id: 'fruit_jupiter',
-    text: 'Aku Jupiter si raja semangka raksasa! Tubuhku sangat besar, bisa memuat seribu Bumi di dalam perutku! Aku punya bintik merah raksasa yang berputar kencang.'
+    text: 'Hahaha! Akulah Jupiter si raja semangka raksasa terbesar! Seribu bumi bisa masuk ke dalam perut besarku lho!'
   },
   {
     id: 'fruit_saturn',
-    text: 'Lihat cincinku! Aku Saturnus si putri mahkota melon! Cincinku terbuat dari jutaan butir es berkilauan yang menari berputar mengelilingiku.'
+    text: 'Lihatlah keindahanku! Aku Saturnus si melon bermahkota cincin es berkilau! Menari anggun di langit antariksa!'
   },
   {
     id: 'fruit_uranus',
-    text: 'Brrr dinginnya! Aku Uranus si apel hijau beku! Aku berputar miring sambil rebahan seperti bola yang menggelinding di atas es.'
+    text: 'Brrr, sejuk sekali! Aku Uranus si apel hijau es yang suka berputar menggelinding santai di atas es dingin!'
   },
   {
     id: 'fruit_neptune',
-    text: 'Wuuusshh! Aku Neptunus si buah blueberry biru! Aku planet terjauh dari Matahari yang selalu ditiup angin badai super kencang dan sangat dingin membeku!'
+    text: 'Wuuush, angin kencang! Aku Neptunus si blueberry biru laut di ujung tata surya! Pelindung terluar keluarga planet kita!'
   }
 ];
 
@@ -90,19 +88,44 @@ if (!existsSync(outDir)) {
   mkdirSync(outDir, { recursive: true });
 }
 
-console.log(`🎙️ Menghasilkan ${stories.length} rekaman audio narasi resmi bahasa Indonesia...`);
+console.log(`🎙️ Mengunduh ${stories.length} rekaman audio suara excited & ceria anak (Google Natural Indonesian TTS)...`);
+
+function fetchSentence(sentence, targetFile) {
+  const clean = sentence.trim();
+  if (!clean) return;
+  const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(clean)}&tl=id&client=tw-ob`;
+  execSync(`curl -s -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" "${url}" -o "${targetFile}"`);
+}
 
 for (const s of stories) {
-  const aiffPath = `/tmp/${s.id}.aiff`;
+  const mp3Path = path.join(outDir, `${s.id}.mp3`);
   const m4aPath = path.join(outDir, `${s.id}.m4a`);
+
   try {
-    execSync(`say -v 'Damayanti' -o "${aiffPath}" "${s.text.replace(/"/g, '\\"')}"`);
-    execSync(`afconvert -f mp4f -d aac "${aiffPath}" "${m4aPath}"`);
-    if (existsSync(aiffPath)) unlinkSync(aiffPath);
-    console.log(`✅ [Audio OK] ${s.id}.m4a`);
+    // Split into sentences so Google TTS gives optimal enthusiastic cadence
+    const parts = s.text.match(/[^.!?]+[.!?]+/g) || [s.text];
+    const tmpParts = [];
+
+    parts.forEach((p, idx) => {
+      const tmpP = `/tmp/part_${s.id}_${idx}.mp3`;
+      fetchSentence(p, tmpP);
+      tmpParts.push(tmpP);
+    });
+
+    // Concat all parts into one mp3
+    execSync(`cat ${tmpParts.join(' ')} > "${mp3Path}"`);
+    // Convert to m4a for Apple WebKit optimization
+    execSync(`afconvert -f mp4f -d aac "${mp3Path}" "${m4aPath}"`);
+
+    // Clean up temp parts
+    tmpParts.forEach(tp => {
+      if (existsSync(tp)) unlinkSync(tp);
+    });
+
+    console.log(`✅ [Excited Audio OK] ${s.id} (.mp3 & .m4a)`);
   } catch (err) {
     console.warn(`⚠️ Gagal generate ${s.id}:`, err.message);
   }
 }
 
-console.log('🎉 Selesai generate semua audio narasi anak!');
+console.log('🎉 Selesai generate semua audio narasi excited anak!');
