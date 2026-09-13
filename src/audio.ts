@@ -42,12 +42,26 @@ export class SpaceSoundEngine {
         if (!voices || voices.length === 0) return;
         this.voicesLoaded = true;
 
-        // Try finding Indonesian voice first
-        const idVoice = voices.find(v => {
-          const l = (v.lang || '').toLowerCase().replace(/_/g, '-');
+        // In Chrome, Google Bahasa Indonesia works natively, whereas Damayanti (macOS voice) fails silently inside Chrome sandbox
+        const googleIdVoice = voices.find(v => {
           const n = (v.name || '').toLowerCase();
-          return l === 'id-id' || l.startsWith('id') || l.startsWith('in') || n.includes('indonesia') || n.includes('damayanti') || n.includes('gadis');
+          const l = (v.lang || '').toLowerCase().replace(/_/g, '-');
+          return (n.includes('google') || n.includes('natural') || !v.localService) && (l.startsWith('id') || n.includes('indonesia'));
         });
+
+        const anyIdVoice = voices.find(v => {
+          const n = (v.name || '').toLowerCase();
+          const l = (v.lang || '').toLowerCase().replace(/_/g, '-');
+          return l === 'id-id' && !n.includes('damayanti');
+        });
+
+        const fallbackIdVoice = voices.find(v => {
+          const l = (v.lang || '').toLowerCase();
+          const n = (v.name || '').toLowerCase();
+          return l.startsWith('id') || n.includes('indonesia') || n.includes('damayanti');
+        });
+
+        const idVoice = googleIdVoice || anyIdVoice || fallbackIdVoice;
 
         // If in English or fallback
         const enVoice = voices.find(v => {
@@ -677,20 +691,34 @@ export class SpaceSoundEngine {
           // Re-check voices if not loaded yet
           const voices = window.speechSynthesis.getVoices();
           if (voices && voices.length > 0) {
-            const idVoice = voices.find(v => {
+            const googleIdVoice = voices.find(v => {
+              const n = (v.name || '').toLowerCase();
+              const l = (v.lang || '').toLowerCase().replace(/_/g, '-');
+              return (n.includes('google') || n.includes('natural') || !v.localService) && (l.startsWith('id') || n.includes('indonesia'));
+            });
+
+            const anyIdVoice = voices.find(v => {
+              const n = (v.name || '').toLowerCase();
+              const l = (v.lang || '').toLowerCase().replace(/_/g, '-');
+              return l === 'id-id' && !n.includes('damayanti');
+            });
+
+            const fallbackIdVoice = voices.find(v => {
               const l = (v.lang || '').toLowerCase();
               const n = (v.name || '').toLowerCase();
-              return l.startsWith('id') || l.includes('id-') || l.includes('_id') || n.includes('indonesia') || n.includes('damayanti');
+              return l.startsWith('id') || n.includes('indonesia') || n.includes('damayanti');
             });
-            if (idVoice) {
-              utterance.voice = idVoice;
+
+            const chosenVoice = googleIdVoice || anyIdVoice || fallbackIdVoice;
+            if (chosenVoice) {
+              utterance.voice = chosenVoice;
             }
           }
 
           // Strict BCP 47 language tag (NEVER use underscores)
           utterance.lang = targetLang === 'id' ? 'id-ID' : 'en-US';
-          utterance.rate = rate;
-          utterance.pitch = pitch;
+          utterance.rate = 1.0;
+          utterance.pitch = 1.0;
 
           utterance.onstart = () => {
             this.notifySpeaking(true, text);
