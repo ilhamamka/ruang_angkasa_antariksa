@@ -23,6 +23,7 @@ const criticalFiles = [
   'src/game-rocketlab.ts',
   'src/game-deepspace.ts',
   'src/game-sandbox.ts',
+  'src/game-satellite.ts',
   'src/questions-engine.ts',
   'src/chart-encyclopedia.ts',
   'src/badges-album.ts',
@@ -218,7 +219,20 @@ assert(typeof spaceSandbox.mount === 'function', 'spaceSandbox.mount harus ada')
 assert(typeof spaceSandbox.unmount === 'function', 'spaceSandbox.unmount harus ada');
 console.log('✅ 12. Game Apollo Lunar Lander & Teleskop Rasi Bintang Nusantara terverifikasi siap dimainkan.\n');
 
+// 13. Test Satellite Mission (SATRIA-1 & Space Debris Cleaner)
+import { satelliteMission } from './src/game-satellite.ts';
+assert(typeof satelliteMission.mount === 'function', 'satelliteMission.mount harus ada');
+assert(typeof satelliteMission.unmount === 'function', 'satelliteMission.unmount harus ada');
+
+import { badgesManager } from './src/badges-album.ts';
+const badges = badgesManager.getStats().badges;
+const saviorBadge = badges.find(b => b.id === 'satellite_savior');
+assert(saviorBadge, 'Lencana satellite_savior harus terdaftar di album');
+assert(saviorBadge.xpReward >= 200, 'Hadiah XP lencana satelit harus bernilai tinggi');
+console.log('✅ 13. Misi Teknisi Cilik Satelit Nusantara & Pembersih Sampah Orbit terverifikasi 100% siap.\n');
+
 console.log('🎉 SEMUA PENGUJIAN OTOMATIS BERHASIL DENGAN 100% SUKSES!');
+
 
 
 

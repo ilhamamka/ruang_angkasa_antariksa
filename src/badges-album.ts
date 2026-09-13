@@ -88,6 +88,16 @@ const DEFAULT_BADGES: CosmicBadge[] = [
     xpReward: 200
   },
   {
+    id: 'satellite_savior',
+    icon: '🛰️',
+    titleId: 'Pahlawan Sinyal Nusantara',
+    titleEn: 'Archipelago Satellite Savior',
+    requirementId: 'Membersihkan sampah antariksa & memulihkan sinyal Satelit Satria-1.',
+    requirementEn: 'Cleaned orbital debris & restored communication satellite signals.',
+    unlocked: false,
+    xpReward: 250
+  },
+  {
     id: 'grand_commander',
     icon: '🎖️',
     titleId: 'Komandan Kosmik Indonesia',

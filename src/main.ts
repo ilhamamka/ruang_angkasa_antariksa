@@ -12,6 +12,7 @@ import { worksheetsManager } from './worksheets.ts';
 import { parentGuideManager } from './parent-guide.ts';
 import { quizController } from './questions-engine.ts';
 import { kidsPathway } from './game-kids-pathway.ts';
+import { satelliteMission } from './game-satellite.ts';
 import { commercial } from './commercial.ts';
 import { confetti } from './confetti.ts';
 
@@ -202,6 +203,7 @@ class SpaceApp {
       'btn-nav-deepspace': 'screen-deepspace',
       'btn-nav-quiz': 'screen-quiz',
       'btn-nav-sandbox': 'screen-sandbox',
+      'btn-nav-satellite': 'screen-satellite',
       'btn-nav-chart': 'screen-encyclopedia',
       'btn-nav-badges': 'screen-badges',
       'btn-nav-worksheets': 'screen-worksheets',
@@ -240,6 +242,11 @@ class SpaceApp {
     const cardSandbox = document.getElementById('card-open-sandbox');
     if (cardSandbox) {
       cardSandbox.addEventListener('click', () => this.switchScreen('screen-sandbox'));
+    }
+
+    const cardSatellite = document.getElementById('card-open-satellite');
+    if (cardSatellite) {
+      cardSatellite.addEventListener('click', () => this.switchScreen('screen-satellite'));
     }
   }
 
@@ -386,6 +393,7 @@ class SpaceApp {
     if (this.currentScreenId === 'screen-solarsystem') solarExplorer.unmount();
     if (this.currentScreenId === 'screen-rocketlab') rocketLab.unmount();
     if (this.currentScreenId === 'screen-deepspace') deepSpaceExplorer.unmount();
+    if (this.currentScreenId === 'screen-satellite') satelliteMission.unmount();
 
     // Hide all screens
     const screens = document.querySelectorAll('.screen');
@@ -438,6 +446,10 @@ class SpaceApp {
       case 'screen-sandbox': {
         const mountPoint = document.getElementById('sandbox-mount');
         if (mountPoint) spaceSandbox.mount(mountPoint);
+        break;
+      }
+      case 'screen-satellite': {
+        satelliteMission.mount('satellite-mount');
         break;
       }
       case 'screen-encyclopedia': {
