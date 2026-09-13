@@ -133,7 +133,12 @@ export class KidsPathwayManager {
 
               <div class="kid-praise-feedback" id="kid-praise-box" style="display:none;">
                 <span class="praise-star">🌟</span>
-                <p id="kid-praise-text">${currentLesson.praiseKid}</p>
+                <div class="praise-content-box">
+                  <p id="kid-praise-text">${currentLesson.praiseKid}</p>
+                  <button class="btn-next-kid-step" id="btn-next-kid-step" type="button">
+                    🚀 Lanjut Petualangan Berikutnya! ▶️
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -402,6 +407,76 @@ export class KidsPathwayManager {
           optBtns[currentLesson.correctKidIdx].classList.add('correct');
           spaceAudio.playPop(250);
           spaceAudio.speakKids('Ayo coba lagi teman hebat!');
+        }
+      });
+    });
+
+    // Advance to next lesson or stage from praise box
+    const nextStepBtn = this.container.querySelector('#btn-next-kid-step');
+    if (nextStepBtn) {
+      nextStepBtn.addEventListener('click', () => {
+        const curStage = KID_LEARNING_STAGES[this.currentStageIdx];
+        if (this.activeLessonIdx < curStage.lessons.length - 1) {
+          this.activeLessonIdx++;
+          spaceAudio.playPop(520);
+          this.render();
+          if (spaceAudio.isAutoNarration()) {
+            const nextLesson = curStage.lessons[this.activeLessonIdx];
+            setTimeout(() => spaceAudio.speakKids(nextLesson.voiceStory), 300);
+          }
+        } else if (this.currentStageIdx < KID_LEARNING_STAGES.length - 1) {
+          const nextStageIdx = this.currentStageIdx + 1;
+          const targetStage = KID_LEARNING_STAGES[nextStageIdx];
+          if (commercial.isStageLocked(targetStage.stageNumber)) {
+            spaceAudio.playPop(260);
+            window.dispatchEvent(new CustomEvent('open-vip-gate'));
+            return;
+          }
+          this.currentStageIdx = nextStageIdx;
+          this.activeLessonIdx = 0;
+          spaceAudio.playCheer();
+          confetti.fire(0.5, 0.45, 70);
+          this.render();
+          if (spaceAudio.isAutoNarration()) {
+            const nextLesson = targetStage.lessons[0];
+            setTimeout(() => spaceAudio.speakKids(nextLesson.voiceStory), 300);
+          }
+        } else {
+          // Last stage complete! Scroll down to certificate
+          const certCard = this.container?.querySelector('.kids-interactive-feature-card');
+          certCard?.scrollIntoView({ behavior: 'smooth' });
+          spaceAudio.playCheer();
+          confetti.fire(0.5, 0.4, 100);
+          spaceAudio.speakKids('Horeee! Kamu telah menyelesaikan semua petualangan! Ambil sertifikat resmi kelulusanmu di bawah ini!');
+        }
+      });
+    }
+
+    // Big Emoji click to play voice and bounce
+    const bigEmoji = this.container.querySelector('.lesson-big-emoji');
+    if (bigEmoji) {
+      bigEmoji.addEventListener('click', () => {
+        const curStage = KID_LEARNING_STAGES[this.currentStageIdx];
+        const curLesson = curStage.lessons[this.activeLessonIdx];
+        bigEmoji.classList.add('pulse');
+        setTimeout(() => bigEmoji.classList.remove('pulse'), 600);
+        spaceAudio.playPop(660);
+        spaceAudio.speakKids(curLesson.voiceStory);
+      });
+    }
+
+    // Fruit analogy cards clickable directly
+    const fruitCards = this.container.querySelectorAll('.fruit-analogy-box');
+    fruitCards.forEach(card => {
+      card.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).classList.contains('btn-fruit-voice')) return;
+        const voiceBtn = card.querySelector('.btn-fruit-voice');
+        const text = voiceBtn?.getAttribute('data-voice');
+        if (text) {
+          card.classList.add('pulse');
+          setTimeout(() => card.classList.remove('pulse'), 500);
+          spaceAudio.playPop(580);
+          spaceAudio.speakKids(text);
         }
       });
     });

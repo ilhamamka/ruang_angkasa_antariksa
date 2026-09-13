@@ -3112,6 +3112,60 @@ body {
   font-size: 15px;
   font-weight: 800;
   color: #ffffff;
+  margin: 0;
+}
+
+.praise-content-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.btn-next-kid-step {
+  background: linear-gradient(135deg, #ffd700, #ff9100);
+  color: #060814;
+  border: none;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 900;
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.45);
+  animation: kidBounce 1.8s infinite ease-in-out;
+  align-self: flex-start;
+  transition: transform 0.15s ease;
+}
+
+.btn-next-kid-step:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 24px rgba(255, 215, 0, 0.7);
+}
+
+@keyframes kidBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.lesson-big-emoji {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.lesson-big-emoji:hover {
+  transform: scale(1.18) rotate(6deg);
+}
+
+.fruit-analogy-box {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fruit-analogy-box:hover {
+  transform: translateY(-3px);
+  border-color: var(--space-cyan);
+  box-shadow: 0 0 16px rgba(0, 242, 254, 0.25);
 }
 
 /* Fruit Scale Carousel */
