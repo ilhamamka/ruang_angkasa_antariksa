@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#060814">
+  <title>Kosmos Cilik Indonesia — Petualangan Edukasi Ruang Angkasa, Antariksa & Roket</title>
+  <meta name="description" content="Media edukasi interaktif anak usia sekolah dasar berbasis kurikulum sains antariksa (Tata Surya, Fisika Roket & Peluncuran, Bintang, Galaksi & Lubang Hitam) dengan audio synthesizer dan sertifikat resmi!">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Nunito:wght@600;700;800;900&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/style.css">
+  <style>
+    /* Prevent layout flash before CSS loads */
+    body { background-color: #060814; margin: 0; }
+  </style>
+</head>
+<body>
+  <!-- Dynamic Procedural Starfield Canvas -->
+  <canvas id="starfield-canvas"></canvas>
+
+  <div id="app">
+    <!-- Top Navigation Bar -->
+    <header class="topbar">
+      <div class="topbar-content">
+        <!-- Brand Logo & Title -->
+        <div class="brand-badge" id="btn-nav-home" role="button" tabindex="0" aria-label="Beranda Antariksa">
+          <span class="brand-logo-icon">🚀</span>
+          <div class="brand-text">
+            <h1>KOSMOS CILIK</h1>
+            <span>Eksplorasi Antariksa Indonesia</span>
+          </div>
+        </div>
+
+        <!-- Navigation Cluster -->
+        <nav class="topbar-nav" aria-label="Menu Utama">
+          <button id="btn-nav-solarsystem" class="nav-pill-btn" type="button">
+            <span>🪐</span> <span>Tata Surya</span>
+          </button>
+          <button id="btn-nav-rocketlab" class="nav-pill-btn" type="button">
+            <span>🛠️</span> <span>Lab Roket</span>
+          </button>
+          <button id="btn-nav-deepspace" class="nav-pill-btn" type="button">
+            <span>✨</span> <span>Kosmos Dalam</span>
+          </button>
+          <button id="btn-nav-quiz" class="nav-pill-btn" type="button">
+            <span>🧠</span> <span>Kuis Misi</span>
+          </button>
+          <button id="btn-nav-sandbox" class="nav-pill-btn" type="button">
+            <span>⚖️</span> <span>Lab Bebas</span>
+          </button>
+          <button id="btn-nav-chart" class="nav-pill-btn" type="button">
+            <span>📚</span> <span>Bagan</span>
+          </button>
+          <button id="btn-nav-badges" class="nav-pill-btn" type="button">
+            <span>🎖️</span> <span>Lencana</span>
+          </button>
+          <button id="btn-nav-worksheets" class="nav-pill-btn" type="button">
+            <span>🖨️</span> <span>Cetak</span>
+          </button>
+          <button id="btn-nav-parent" class="nav-pill-btn" type="button">
+            <span>👨‍👩‍👧</span> <span>Rapor Ortu</span>
+          </button>
+        </nav>
+
+        <!-- Quick Audio & Language Controls Capsule -->
+        <div class="settings-capsule" role="group" aria-label="Pengaturan Cepat">
+          <button id="btn-toggle-lang" class="capsule-btn" type="button" title="Ganti Bahasa Narasi: ID / EN">
+            <span id="lang-label">🇮🇩 ID</span>
+          </button>
+          <div class="capsule-divider"></div>
+          <button id="btn-toggle-bgm" class="capsule-btn" type="button" title="Nyalakan/Matikan Musik Kosmik" aria-label="Musik">
+            <span>🎵</span>
+          </button>
+          <button id="btn-toggle-sound" class="capsule-btn" type="button" title="Nyalakan/Matikan Efek Suara" aria-label="Suara">
+            <span>🔊</span>
+          </button>
+          <button id="btn-toggle-fullscreen" class="capsule-btn" type="button" title="Layar Penuh Kiosk" aria-label="Layar Penuh">
+            <span>⛶</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Screens Container -->
+    <main class="main-content">
+      <!-- SCREEN 1: HOME & LEVEL HUB -->
+      <section id="screen-home" class="screen active">
+        <!-- Hero Banner -->
+        <div class="hero-banner">
+          <div class="hero-box">
+            <div class="hero-text-col">
+              <span class="hero-kicker">🇮🇩 EDISI ASTRONOT CILIK INDONESIA · SAINS & PETUALANGAN</span>
+              <h2 class="hero-title">Jelajahi Rahasia Alam Semesta & Roket Antariksa!</h2>
+              <p class="hero-desc">Berdasarkan kurikulum sains anak (IPAS & NASA STEM). Rakit roketmu sendiri, tembus gravitasi bumi, kelilingi 8 planet tata surya, dan temukan misteri kelahiran bintang hingga lubang hitam!</p>
+              <div class="hero-stats-row">
+                <span class="stat-pill" id="hero-stat-stars">⭐ 1 Bintang</span>
+                <span class="stat-pill" id="hero-stat-xp">🏆 50 XP</span>
+                <span class="stat-pill" id="hero-stat-rank">🎖️ Kadet Antariksa</span>
+              </div>
+            </div>
+            <div class="hero-visual-mascot">
+              <svg viewBox="0 0 100 100" class="mascot-rocket-svg">
+                <!-- Cosmic cute rocket astronaut mascot -->
+                <circle cx="50" cy="50" r="45" fill="none" stroke="#00f2fe" stroke-width="2" stroke-dasharray="5,5" opacity="0.6"/>
+                <path d="M50 14 C36 28, 32 58, 34 76 L66 76 C68 58, 64 28, 50 14 Z" fill="#ffffff" stroke="#0288d1" stroke-width="2"/>
+                <circle cx="50" cy="42" r="14" fill="#00e5ff" stroke="#01579b" stroke-width="2"/>
+                <circle cx="46" cy="38" r="4" fill="#ffffff"/>
+                <!-- Astronaut helmet smile -->
+                <path d="M44 46 Q50 50 56 46" stroke="#01579b" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <!-- Fins -->
+                <polygon points="34,60 18,78 34,74" fill="#ff3d00"/>
+                <polygon points="66,60 82,78 66,74" fill="#ff3d00"/>
+                <!-- Rocket flame -->
+                <polygon points="50,76 42,94 50,88 58,94" fill="#ffd600"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: 3 Interactive Worlds -->
+        <div class="section-header">
+          <h2>Pilih Petualangan Misi</h2>
+          <span>3 Dunia Interaktif Berdasarkan Kurikulum Sains Antariksa</span>
+        </div>
+
+        <div class="worlds-grid">
+          <!-- World 1: Solar System Explorer -->
+          <div class="world-card card-solarsystem" id="card-open-solarsystem">
+            <span class="world-badge">DUNIA 1 · TATA SURYA KITA</span>
+            <h3>🪐 Ekspedisi 8 Planet & Matahari</h3>
+            <p>Jelajahi orbit dinamis, telusuri perbedaan planet batuan (Merkurius, Venus, Bumi, Mars) dengan raksasa gas & es (Jupiter, Saturnus, Uranus, Neptunus), serta sabuk asteroid!</p>
+            <div class="world-preview-art">
+              <svg viewBox="0 0 120 70">
+                <circle cx="20" cy="35" r="16" fill="#ffd54f"/>
+                <circle cx="55" cy="35" r="6" fill="#00e5ff"/>
+                <ellipse cx="90" cy="35" rx="14" ry="5" fill="none" stroke="#ffeb3b" stroke-width="2" transform="rotate(-20 90 35)"/>
+                <circle cx="90" cy="35" r="10" fill="#ffa726"/>
+              </svg>
+            </div>
+            <button class="btn-start-world" type="button">
+              ▶️ Jelajahi Tata Surya Sekarang
+            </button>
+          </div>
+
+          <!-- World 2: Rocket Lab & Launchpad -->
+          <div class="world-card card-rocketlab" id="card-open-rocketlab">
+            <span class="world-badge">DUNIA 2 · FISIKA & TEKNOLOGI</span>
+            <h3>🚀 Bengkel Roket & Pangkalan Luncur</h3>
+            <p>Rakit komponen roket modular (kapsul awak, tangki bahan bakar titan, pendorong booster). Hitung TWR dorongan, mulai hitung mundur 10 detik, dan luncurkan menembus atmosfer ke orbit!</p>
+            <div class="world-preview-art">
+              <svg viewBox="0 0 120 70">
+                <path d="M60 10 L70 45 L50 45 Z" fill="#ffffff" stroke="#d32f2f" stroke-width="1.5"/>
+                <rect x="52" y="45" width="16" height="15" fill="#cfd8dc"/>
+                <polygon points="60,60 54,70 60,67 66,70" fill="#ff5722"/>
+              </svg>
+            </div>
+            <button class="btn-start-world" type="button">
+              ▶️ Masuk ke Bengkel Roket
+            </button>
+          </div>
+
+          <!-- World 3: Deep Space & Stellar Evolution -->
+          <div class="world-card card-deepspace" id="card-open-deepspace">
+            <span class="world-badge">DUNIA 3 · KOSMOS DALAM</span>
+            <h3>✨ Siklus Hidup Bintang & Lubang Hitam</h3>
+            <p>Bagaimana bintang lahir dari awan nebula, membakar hidrogen selama miliaran tahun, meledak menjadi supernova dahsyat, hingga menjadi lubang hitam dengan gravitasi super kuat!</p>
+            <div class="world-preview-art">
+              <svg viewBox="0 0 120 70">
+                <circle cx="60" cy="35" r="14" fill="#000000" stroke="#00e5ff" stroke-width="2"/>
+                <ellipse cx="60" cy="35" rx="35" ry="10" fill="none" stroke="#d500f9" stroke-width="2" opacity="0.8"/>
+              </svg>
+            </div>
+            <button class="btn-start-world" type="button">
+              ▶️ Telusuri Kosmos Dalam
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 2: SOLAR SYSTEM ORRERY -->
+      <section id="screen-solarsystem" class="screen">
+        <div id="solarsystem-mount"></div>
+      </section>
+
+      <!-- SCREEN 3: ROCKET LAB & LAUNCHPAD -->
+      <section id="screen-rocketlab" class="screen">
+        <div id="rocketlab-mount"></div>
+      </section>
+
+      <!-- SCREEN 4: DEEP SPACE & BLACK HOLE -->
+      <section id="screen-deepspace" class="screen">
+        <div id="deepspace-mount"></div>
+      </section>
+
+      <!-- SCREEN 5: QUIZ ENGINE -->
+      <section id="screen-quiz" class="screen">
+        <div id="quiz-mount"></div>
+      </section>
+
+      <!-- SCREEN 6: SANDBOX GRAVITY LAB -->
+      <section id="screen-sandbox" class="screen">
+        <div id="sandbox-mount"></div>
+      </section>
+
+      <!-- SCREEN 7: ENCYCLOPEDIA & COMPARATIVE TABLES -->
+      <section id="screen-encyclopedia" class="screen">
+        <div id="encyclopedia-mount"></div>
+      </section>
+
+      <!-- SCREEN 8: BADGES ALBUM -->
+      <section id="screen-badges" class="screen">
+        <div class="badges-album-header">
+          <h2>🎖️ Koleksi Lencana & Prestasi Astronot</h2>
+          <p>Kumpulkan semua lencana eksplorasi antariksa dengan menyelesaikan misi, kuis, dan eksperimen!</p>
+        </div>
+        <div class="badges-grid" id="badges-grid-mount"></div>
+      </section>
+
+      <!-- SCREEN 9: WORKSHEETS & CERTIFICATE -->
+      <section id="screen-worksheets" class="screen">
+        <div id="worksheets-mount"></div>
+      </section>
+
+      <!-- SCREEN 10: PARENT & TEACHER GUIDE -->
+      <section id="screen-parent-guide" class="screen">
+        <div id="parent-guide-mount"></div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
