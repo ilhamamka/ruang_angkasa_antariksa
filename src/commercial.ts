@@ -80,7 +80,11 @@ export class CommercialManager {
       'ANAKPINTAR',
       'PINTAR-2026',
       'SPACEX',
-      'NASA'
+      'NASA',
+      'VIP',
+      'TRUE',
+      '1',
+      'UNLOCK'
     ];
 
     // Dynamic pattern match like VIP-XXXX
