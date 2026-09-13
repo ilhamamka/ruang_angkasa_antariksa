@@ -21,6 +21,13 @@ export class KidsPathwayManager {
   // Balloon experiment state
   private balloonState: 'empty' | 'inflated' | 'launched' = 'empty';
 
+  // Tactile lesson toy states
+  private sunPulseCount: number = 0;
+  private earthTimeState: 'day' | 'night' = 'day';
+  private moonPhaseState: 'sabit' | 'separuh' | 'purnama' = 'sabit';
+  private marsRoverPhotos: number = 0;
+  private marsRoverRocks: number = 0;
+
   public mount(container: HTMLElement) {
     this.container = container;
     this.render();
@@ -36,6 +43,140 @@ export class KidsPathwayManager {
 
   public unmount() {
     spaceAudio.stopSpeaking();
+  }
+
+  private renderInteractiveLessonToy(lessonId: string): string {
+    if (lessonId === 'l1_sun') {
+      return `
+        <div class="interactive-toy-card sun-toy-card">
+          <div class="toy-header">
+            <span class="toy-badge">☀️ MAINAN INTERAKTIF: MATAHARI RAMAH</span>
+            <span class="toy-sub">Sentuh Matahari untuk memancarkan sinar hangat ke Bumi!</span>
+          </div>
+          <div class="sun-toy-stage">
+            <div class="interactive-sun-sphere ${this.sunPulseCount > 0 ? 'pulse' : ''}" id="interactive-sun-sphere" role="button" tabindex="0">
+              <span class="sun-face">😎</span>
+              <div class="sun-flare-rings"></div>
+            </div>
+          </div>
+          <div class="toy-controls">
+            <button class="btn-toy-action" id="btn-sun-warm" type="button">
+              🔥 Pancarkan Sinar Hangat! (${this.sunPulseCount}x Disinari)
+            </button>
+          </div>
+          <div class="toy-status-bar" id="sun-status-text">
+            ${this.sunPulseCount > 0 ? '✨ Wuuush! Hangat sekali sinar Matahari, tanaman dan bunga pun tumbuh subur!' : 'Sentuh tombol atau bola Matahari untuk menghangatkan bumi!'}
+          </div>
+        </div>
+      `;
+    }
+
+    if (lessonId === 'l1_earth') {
+      return `
+        <div class="interactive-toy-card earth-toy-card">
+          <div class="toy-header">
+            <span class="toy-badge">🌍 MAINAN INTERAKTIF: SIANG & MALAM DI BUMI</span>
+            <span class="toy-sub">Tekan tombol siang atau malam untuk melihat waktu di Indonesia!</span>
+          </div>
+          <div class="earth-toy-stage">
+            <div class="interactive-earth-sphere ${this.earthTimeState}" id="interactive-earth-sphere">
+              <span class="earth-emoji-display">${this.earthTimeState === 'day' ? '🌍' : '🌏'}</span>
+              <span class="earth-flag-tag">🇮🇩 Indonesia</span>
+            </div>
+            <div class="earth-sky-companion">
+              ${this.earthTimeState === 'day' ? '☀️ Siang Terang: Ayo sekolah & bermain ceria!' : '🌙 Malam Tenang: Bintang bertabur & selamat tidur nyenyak!'}
+            </div>
+          </div>
+          <div class="toy-controls">
+            <button class="btn-toy-toggle ${this.earthTimeState === 'day' ? 'active' : ''}" id="btn-earth-day" type="button">
+              ☀️ 1. Waktu Siang (Matahari)
+            </button>
+            <button class="btn-toy-toggle ${this.earthTimeState === 'night' ? 'active' : ''}" id="btn-earth-night" type="button">
+              🌙 2. Waktu Malam (Lampu Kota)
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    if (lessonId === 'l1_moon') {
+      return `
+        <div class="interactive-toy-card moon-toy-card">
+          <div class="toy-header">
+            <span class="toy-badge">🌙 MAINAN INTERAKTIF: FASE BISKUIT BULAN</span>
+            <span class="toy-sub">Pilih bentuk Bulan untuk melihat senyuman indahnya di langit!</span>
+          </div>
+          <div class="moon-toy-stage">
+            <div class="interactive-moon-sphere" id="interactive-moon-sphere">
+              <span class="moon-display-emoji">
+                ${this.moonPhaseState === 'sabit' ? '🌙' : (this.moonPhaseState === 'separuh' ? '🌓' : '🌕')}
+              </span>
+            </div>
+          </div>
+          <div class="toy-controls">
+            <button class="btn-toy-toggle ${this.moonPhaseState === 'sabit' ? 'active' : ''}" data-phase="sabit" type="button">
+              🌙 Bulan Sabit
+            </button>
+            <button class="btn-toy-toggle ${this.moonPhaseState === 'separuh' ? 'active' : ''}" data-phase="separuh" type="button">
+              🌓 Bulan Separuh
+            </button>
+            <button class="btn-toy-toggle ${this.moonPhaseState === 'purnama' ? 'active' : ''}" data-phase="purnama" type="button">
+              🌕 Bulan Purnama
+            </button>
+          </div>
+          <div class="toy-status-bar" id="moon-status-text">
+            ${this.moonPhaseState === 'sabit' ? 'Bulan Sabit: Melengkung runcing tersenyum di langit malam!' : (this.moonPhaseState === 'separuh' ? 'Bulan Separuh: Separuh wajahnya tersinari cahaya matahari!' : 'Bulan Purnama: Bulat penuh terang benderang menerangi malam!')}
+          </div>
+        </div>
+      `;
+    }
+
+    if (lessonId === 'l3_zerog') {
+      return `
+        <div class="interactive-toy-card iss-toy-card">
+          <div class="toy-header">
+            <span class="toy-badge">🤸‍♂️ MAINAN INTERAKTIF: MELAYANG DI STASIUN ISS</span>
+            <span class="toy-sub">Sentuh astronot dan benda-benda ini untuk membuat mereka melayang salto!</span>
+          </div>
+          <div class="iss-cabin-stage">
+            <button class="floating-prop prop-astro" id="prop-astro" type="button" title="Sentuh Astronot!">🧑‍🚀</button>
+            <button class="floating-prop prop-water" id="prop-water" type="button" title="Sentuh Gelembung Air!">💧</button>
+            <button class="floating-prop prop-apple" id="prop-apple" type="button" title="Sentuh Apel Melayang!">🍎</button>
+          </div>
+          <div class="toy-status-bar">
+            Di luar angkasa tidak ada gravitasi, semua benda melayang santai seperti di dalam mimpi!
+          </div>
+        </div>
+      `;
+    }
+
+    if (lessonId === 'l4_mars_quiz' || lessonId === 'l4_scale_quiz') {
+      return `
+        <div class="interactive-toy-card mars-toy-card">
+          <div class="toy-header">
+            <span class="toy-badge">🔴 MAINAN INTERAKTIF: ROBOT PENJELAJAH MARS</span>
+            <span class="toy-sub">Kendalikan robot Curiosity mengumpulkan sampel pasir merah Mars!</span>
+          </div>
+          <div class="mars-rover-stage" id="mars-rover-stage">
+            <div class="mars-rover-sprite" id="mars-rover-sprite">🚜🤖</div>
+            <div class="mars-rock" id="mars-rock">🪨</div>
+          </div>
+          <div class="toy-controls">
+            <button class="btn-toy-action" id="btn-rover-photo" type="button">
+              📸 Jepret Foto Mars (${this.marsRoverPhotos} Foto)
+            </button>
+            <button class="btn-toy-action" id="btn-rover-sample" type="button">
+              🪨 Ambil Sampel Batu (${this.marsRoverRocks} Sampel)
+            </button>
+          </div>
+          <div class="toy-status-bar" id="mars-status-text">
+            Robot penjelajah cilik beroda enam sedang menjelajah kawah merah Mars!
+          </div>
+        </div>
+      `;
+    }
+
+    return '';
   }
 
   private render() {
@@ -117,6 +258,9 @@ export class KidsPathwayManager {
                 </div>
               </div>
             </div>
+
+            <!-- Tactile Interactive Toy for This Lesson -->
+            ${this.renderInteractiveLessonToy(currentLesson.id)}
 
             <!-- Mini Challenge for Kids -->
             <div class="kids-challenge-box">
@@ -464,6 +608,101 @@ export class KidsPathwayManager {
         spaceAudio.speakKids(curLesson.voiceStory);
       });
     }
+
+    // Interactive Sun Warmth Emitter
+    const sunBtn = this.container.querySelector('#btn-sun-warm');
+    const sunSphere = this.container.querySelector('#interactive-sun-sphere');
+    const triggerSunWarmth = () => {
+      this.sunPulseCount++;
+      spaceAudio.playPop(520 + Math.min(this.sunPulseCount * 30, 400));
+      confetti.fire(0.5, 0.4, 40);
+      const sphere = this.container?.querySelector('#interactive-sun-sphere');
+      if (sphere) {
+        sphere.classList.add('pulse');
+        setTimeout(() => sphere.classList.remove('pulse'), 600);
+      }
+      const statusText = this.container?.querySelector('#sun-status-text');
+      if (statusText) {
+        statusText.textContent = `✨ Wuuush! Matahari menyinari Bumi ke-${this.sunPulseCount} kali. Seluruh tanaman & hewan pun hangat!`;
+      }
+      const warmBtn = this.container?.querySelector('#btn-sun-warm');
+      if (warmBtn) {
+        warmBtn.textContent = `🔥 Pancarkan Sinar Hangat! (${this.sunPulseCount}x Disinari)`;
+      }
+      spaceAudio.speakKids('Wuuush! Hangat sekali sinar Matahari kita!');
+    };
+    sunBtn?.addEventListener('click', triggerSunWarmth);
+    sunSphere?.addEventListener('click', triggerSunWarmth);
+
+    // Interactive Earth Day/Night
+    const earthDayBtn = this.container.querySelector('#btn-earth-day');
+    const earthNightBtn = this.container.querySelector('#btn-earth-night');
+    earthDayBtn?.addEventListener('click', () => {
+      this.earthTimeState = 'day';
+      spaceAudio.playPop(600);
+      this.render();
+      spaceAudio.speakKids('Saat siang hari, Matahari menyinari Indonesia agar kita bisa bermain ceria!');
+    });
+    earthNightBtn?.addEventListener('click', () => {
+      this.earthTimeState = 'night';
+      spaceAudio.playPop(420);
+      this.render();
+      spaceAudio.speakKids('Saat malam hari, lampu kota menyala indah dan waktunya kita tidur nyenyak!');
+    });
+
+    // Interactive Moon Phase Buttons
+    const moonPhaseBtns = this.container.querySelectorAll('[data-phase]');
+    moonPhaseBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const phase = (e.currentTarget as HTMLElement).getAttribute('data-phase') as 'sabit' | 'separuh' | 'purnama';
+        if (phase) {
+          this.moonPhaseState = phase;
+          spaceAudio.playPop(550);
+          this.render();
+          if (phase === 'sabit') {
+            spaceAudio.speakKids('Ini Bulan Sabit yang tersenyum manis seperti pisang di langit malam!');
+          } else if (phase === 'separuh') {
+            spaceAudio.speakKids('Ini Bulan Separuh, seperti biskuit yang dimakan setengah!');
+          } else {
+            spaceAudio.speakKids('Ini Bulan Purnama yang bulat penuh dan terang benderang!');
+          }
+        }
+      });
+    });
+
+    // Interactive ISS Zero-G Floating Props
+    const zeroGProps = this.container.querySelectorAll('.floating-prop');
+    zeroGProps.forEach(prop => {
+      prop.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement;
+        target.classList.add('pulse');
+        setTimeout(() => target.classList.remove('pulse'), 600);
+        spaceAudio.playPop(650 + Math.random() * 250);
+        spaceAudio.speakKids('Hop! Di dalam stasiun antariksa tanpa gravitasi, semua benda melayang-layang!');
+      });
+    });
+
+    // Interactive Mars Rover Actions
+    const roverPhotoBtn = this.container.querySelector('#btn-rover-photo');
+    const roverSampleBtn = this.container.querySelector('#btn-rover-sample');
+    roverPhotoBtn?.addEventListener('click', () => {
+      this.marsRoverPhotos++;
+      spaceAudio.playPop(850);
+      confetti.fire(0.5, 0.45, 50);
+      const flash = document.createElement('div');
+      flash.className = 'camera-flash-overlay';
+      document.body.appendChild(flash);
+      setTimeout(() => flash.remove(), 250);
+      this.render();
+      spaceAudio.speakKids(`Cekrek! Foto kawah merah Mars ke-${this.marsRoverPhotos} berhasil dipotret!`);
+    });
+    roverSampleBtn?.addEventListener('click', () => {
+      this.marsRoverRocks++;
+      spaceAudio.playPop(480);
+      badgesManager.addXp(15);
+      this.render();
+      spaceAudio.speakKids(`Batu Mars ke-${this.marsRoverRocks} berhasil diambil robot Curiosity!`);
+    });
 
     // Fruit analogy cards clickable directly
     const fruitCards = this.container.querySelectorAll('.fruit-analogy-box');
