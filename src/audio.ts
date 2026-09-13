@@ -603,16 +603,28 @@ export class SpaceSoundEngine {
     }
   }
 
+  public updateSoundToggleUi() {
+    if (typeof document === 'undefined') return;
+    const btn = document.getElementById('btn-toggle-sound');
+    if (btn) {
+      btn.textContent = this.soundEnabled ? '🔊' : '🔇';
+    }
+  }
+
   // --- Triple-Layer Voice Narration Engine ---
   // Works with native SpeechSynthesis + Fallback Mascot Tones + Live Subtitles
   public speak(text: string, overrideLang?: 'id' | 'en') {
-    if (!this.soundEnabled || !text) return;
+    if (!text) return;
+    this.soundEnabled = true;
+    this.updateSoundToggleUi();
     this.speakInternal(text, 0.98, 1.05, overrideLang);
   }
 
   public speakKids(text: string, onEnd?: () => void) {
-    if (!this.soundEnabled || !text) return;
-    // Pacing and pitch matching working speech synthesis
+    if (!text) return;
+    // Auto-unmute when explicit speech is requested
+    this.soundEnabled = true;
+    this.updateSoundToggleUi();
     this.speakInternal(text, 0.95, 1.05, undefined, onEnd);
   }
 
@@ -622,8 +634,13 @@ export class SpaceSoundEngine {
     // Ensure audio context is ready
     this.initCtx();
 
+    // Show live subtitle banner immediately so user gets instant visual confirmation
+    this.notifySpeaking(true, text);
+
+    // Play tactile confirmation pop sound
+    this.playPop(520);
+
     if (!('speechSynthesis' in window)) {
-      this.notifySpeaking(true, text);
       setTimeout(() => {
         this.notifySpeaking(false, '');
         if (onEnd) onEnd();
@@ -632,7 +649,13 @@ export class SpaceSoundEngine {
     }
 
     try {
-      window.speechSynthesis.cancel();
+      // Force unfreeze Chrome's speech engine state machine
+      try {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.resume();
+      } catch {}
+
       if (this.keepAliveTimer) {
         clearInterval(this.keepAliveTimer);
         this.keepAliveTimer = null;
@@ -652,20 +675,16 @@ export class SpaceSoundEngine {
           (window as unknown as { __activeUtterance?: SpeechSynthesisUtterance }).__activeUtterance = utterance;
 
           // Re-check voices if not loaded yet
-          if (!this.selectedVoice) {
-            const voices = window.speechSynthesis.getVoices();
-            if (voices && voices.length > 0) {
-              const idVoice = voices.find(v => {
-                const l = (v.lang || '').toLowerCase();
-                const n = (v.name || '').toLowerCase();
-                return l.startsWith('id') || l.includes('id-') || l.includes('_id') || n.includes('indonesia') || n.includes('damayanti');
-              });
-              this.selectedVoice = idVoice || null;
+          const voices = window.speechSynthesis.getVoices();
+          if (voices && voices.length > 0) {
+            const idVoice = voices.find(v => {
+              const l = (v.lang || '').toLowerCase();
+              const n = (v.name || '').toLowerCase();
+              return l.startsWith('id') || l.includes('id-') || l.includes('_id') || n.includes('indonesia') || n.includes('damayanti');
+            });
+            if (idVoice) {
+              utterance.voice = idVoice;
             }
-          }
-
-          if (this.selectedVoice && (targetLang === 'id' ? (this.selectedVoice.lang || '').toLowerCase().includes('id') || (this.selectedVoice.name || '').toLowerCase().includes('damayanti') || (this.selectedVoice.name || '').toLowerCase().includes('indonesia') : true)) {
-            utterance.voice = this.selectedVoice;
           }
 
           // Strict BCP 47 language tag (NEVER use underscores)

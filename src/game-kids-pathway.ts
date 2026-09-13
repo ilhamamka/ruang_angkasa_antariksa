@@ -348,6 +348,18 @@ export class KidsPathwayManager {
       voiceBtn.addEventListener('click', () => {
         const currentStage = KID_LEARNING_STAGES[this.currentStageIdx];
         const currentLesson = currentStage.lessons[this.activeLessonIdx];
+        voiceBtn.classList.add('pulse');
+        setTimeout(() => voiceBtn.classList.remove('pulse'), 600);
+        spaceAudio.speakKids(currentLesson.voiceStory);
+      });
+    }
+
+    // Story bubble clickable
+    const speechBubble = this.container.querySelector('.story-speech-bubble');
+    if (speechBubble) {
+      speechBubble.addEventListener('click', () => {
+        const currentStage = KID_LEARNING_STAGES[this.currentStageIdx];
+        const currentLesson = currentStage.lessons[this.activeLessonIdx];
         spaceAudio.speakKids(currentLesson.voiceStory);
       });
     }
