@@ -78,7 +78,12 @@ export class DeepSpaceExplorer {
             </div>
             <div class="spotlight-info">
               <span class="spotlight-duration">⏳ Durasi Fase: ${currentStage.duration}</span>
-              <h2 class="spotlight-title">${currentStage.nameId}</h2>
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                <h2 class="spotlight-title" style="margin:0;">${currentStage.nameId}</h2>
+                <button class="btn-voice-speech" id="btn-speak-stellar-stage" type="button" style="padding:6px 14px; font-size:12px;">
+                  🔊 Dengarkan Cerita Bintang
+                </button>
+              </div>
               <span class="spotlight-temp">🌡️ Suhu Inti: ${currentStage.temperatureKelvin}</span>
               <p class="spotlight-desc">${currentStage.descriptionId}</p>
               <div class="spotlight-phenomenon">
@@ -97,7 +102,7 @@ export class DeepSpaceExplorer {
           <div class="bh-3d-header">
             <div>
               <h3>🕳️ Simulator Gravitasi 3D Lubang Hitam (Sagittarius A*)</h3>
-              <p>10.000 partikel materi berputar pada kecepatan mendekati cahaya. Klik di kanvas 3D untuk menyuntikkan aliran materi baru!</p>
+              <p>10.000 partikel materi berputar pada kecepatan mendekati cahaya. Klik tombol untuk menyuntikkan aliran materi baru!</p>
             </div>
             <button class="btn-inject-matter" id="btn-inject-matter">
               ⚡ Suntikkan Badai Partikel Baru
@@ -119,7 +124,7 @@ export class DeepSpaceExplorer {
           <h3>🌌 Galaksi & Keajaiban Langit Malam</h3>
           <div class="entities-grid">
             ${COSMIC_ENTITIES.map(e => `
-              <div class="entity-card">
+              <div class="entity-card" data-speak="${e.nameId}. ${e.summaryId} ${e.funFactId}">
                 <div class="entity-header">
                   <h4>${e.nameId}</h4>
                   <span class="entity-distance">${e.distanceFromEarth}</span>
@@ -128,6 +133,9 @@ export class DeepSpaceExplorer {
                 <div class="entity-funfact">
                   💡 <strong>Tahukah Kamu?</strong> ${e.funFactId}
                 </div>
+                <button class="btn-entity-speak" type="button" style="margin-top:10px; background:rgba(0,229,255,0.1); border:1px solid #00e5ff; color:#00e5ff; border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer;">
+                  🔊 Dengar Fakta Kosmik
+                </button>
               </div>
             `).join('')}
           </div>
@@ -386,6 +394,27 @@ export class DeepSpaceExplorer {
         spaceAudio.playWarpWhoosh();
       });
     }
+
+    // Stellar stage voice button
+    const stageVoiceBtn = this.container.querySelector('#btn-speak-stellar-stage');
+    if (stageVoiceBtn) {
+      stageVoiceBtn.addEventListener('click', () => {
+        const currentStage = STELLAR_LIFECYCLE[this.currentStageIndex];
+        spaceAudio.speakKids(`${currentStage.nameId}. ${currentStage.descriptionId}`);
+      });
+    }
+
+    // Cosmic entity speech buttons
+    const entityBtns = this.container.querySelectorAll('.btn-entity-speak');
+    entityBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const parentCard = (e.currentTarget as HTMLElement).closest('.entity-card');
+        const text = parentCard?.getAttribute('data-speak');
+        if (text) {
+          spaceAudio.speakKids(text);
+        }
+      });
+    });
   }
 
   private setStage(index: number) {
@@ -396,6 +425,13 @@ export class DeepSpaceExplorer {
     }
     this.renderUI();
     this.init3DBlackHole();
+
+    if (spaceAudio.isAutoNarration()) {
+      const currentStage = STELLAR_LIFECYCLE[this.currentStageIndex];
+      setTimeout(() => {
+        spaceAudio.speakKids(`${currentStage.nameId}. ${currentStage.descriptionId}`);
+      }, 300);
+    }
   }
 }
 

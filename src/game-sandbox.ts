@@ -96,8 +96,9 @@ export class SpaceSandboxLab {
 
     return targets.map(t => {
       const calculatedWeight = (this.earthWeightKg * t.ratio).toFixed(1);
+      const voiceSpeech = `Di ${t.name}, berat badanmu menjadi ${calculatedWeight} kilogram! ${t.fun}`;
       return `
-        <div class="planet-weight-card">
+        <div class="planet-weight-card" data-speak="${voiceSpeech}" style="cursor: pointer;" title="Sentuh untuk mendengarkan suara">
           <div class="pw-header">
             <h4>${t.name}</h4>
             <span class="pw-ratio">${t.ratio}g</span>
@@ -107,6 +108,7 @@ export class SpaceSandboxLab {
             <span class="pw-kg">kg</span>
           </div>
           <p class="pw-fun">${t.fun}</p>
+          <div style="font-size: 11px; color: #00e5ff; margin-top: 6px;">🔊 Dengar Suara</div>
         </div>
       `;
     }).join('');
@@ -119,12 +121,27 @@ export class SpaceSandboxLab {
     const minusBtn = this.container.querySelector('#btn-weight-minus');
     const plusBtn = this.container.querySelector('#btn-weight-plus');
 
+    const bindCardClicks = () => {
+      const cards = this.container?.querySelectorAll('.planet-weight-card');
+      cards?.forEach(card => {
+        card.addEventListener('click', () => {
+          const text = card.getAttribute('data-speak');
+          if (text) {
+            spaceAudio.speakKids(text);
+          }
+        });
+      });
+    };
+
+    bindCardClicks();
+
     const updateWeight = (newVal: number) => {
       this.earthWeightKg = Math.max(10, Math.min(150, newVal));
       if (input) input.value = this.earthWeightKg.toString();
       const grid = this.container?.querySelector('#gravity-cards-grid');
       if (grid) {
         grid.innerHTML = this.renderGravityCards();
+        bindCardClicks();
       }
       spaceAudio.playPop(480);
       badgesManager.unlockBadge('gravity_master');

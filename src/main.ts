@@ -379,7 +379,12 @@ class SpaceApp {
 
         <div class="quiz-question-box">
           <span class="quiz-icon">${q.icon}</span>
-          <h3 class="quiz-question-text">${q.questionId}</h3>
+          <div style="flex:1;">
+            <h3 class="quiz-question-text">${q.questionId}</h3>
+          </div>
+          <button class="btn-voice-speech" id="btn-quiz-speak" type="button" style="padding:6px 14px; font-size:12px; margin-left:10px;">
+            🔊 Baca Soal
+          </button>
         </div>
 
         <div class="quiz-options-list">
@@ -398,6 +403,18 @@ class SpaceApp {
         <button class="btn-next-quiz" id="btn-next-quiz" style="display:none;">Lanjut ke Soal Berikutnya ▶</button>
       </div>
     `;
+
+    // Speak question button
+    const speakBtn = quizMount.querySelector('#btn-quiz-speak');
+    if (speakBtn) {
+      speakBtn.addEventListener('click', () => {
+        spaceAudio.speakKids(q.questionId);
+      });
+    }
+
+    if (spaceAudio.isAutoNarration()) {
+      setTimeout(() => spaceAudio.speakKids(q.questionId), 250);
+    }
 
     const optBtns = quizMount.querySelectorAll('.quiz-option-btn');
     const feedbackBox = quizMount.querySelector('#quiz-feedback-box') as HTMLElement;
@@ -419,10 +436,14 @@ class SpaceApp {
           badgesManager.addStar(1);
           badgesManager.recordQuizCorrect();
           this.updateHeroStats();
+          spaceAudio.playCheer();
+          spaceAudio.speakKids(`Hebat sekali! ${result.question.explanationId}`);
         } else {
           target.classList.add('incorrect');
           // Highlight correct button
           optBtns[result.question.correctIndex].classList.add('correct');
+          spaceAudio.playPop(220);
+          spaceAudio.speakKids(`Jawaban benar: ${result.question.optionsId[result.question.correctIndex]}. ${result.question.explanationId}`);
         }
 
         // Show feedback
