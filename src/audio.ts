@@ -642,7 +642,7 @@ export class SpaceSoundEngine {
     this.speakInternal(text, 0.95, 1.05, undefined, onEnd);
   }
 
-  private speakInternal(text: string, rate = 0.95, pitch = 1.05, overrideLang?: 'id' | 'en', onEnd?: () => void) {
+  private speakInternal(text: string, rate = 0.96, pitch = 1.05, overrideLang?: 'id' | 'en', onEnd?: () => void) {
     if (typeof window === 'undefined') return;
 
     // Ensure audio context is ready
@@ -658,130 +658,75 @@ export class SpaceSoundEngine {
       setTimeout(() => {
         this.notifySpeaking(false, '');
         if (onEnd) onEnd();
-      }, Math.max(text.length * 75, 1500));
+      }, Math.max(text.length * 70, 1500));
       return;
     }
 
     try {
-      // Force unfreeze Chrome's speech engine state machine
-      try {
-        window.speechSynthesis.pause();
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.resume();
-      } catch {}
+      window.speechSynthesis.cancel();
 
       if (this.keepAliveTimer) {
         clearInterval(this.keepAliveTimer);
         this.keepAliveTimer = null;
       }
 
-      // Asynchronous dispatch prevents race condition in Chromium/WebKit engines
-      setTimeout(() => {
-        try {
-          if (window.speechSynthesis.paused) {
-            window.speechSynthesis.resume();
-          }
+      const targetLang = overrideLang || this.lang;
+      const utterance = new SpeechSynthesisUtterance(text);
 
-          const targetLang = overrideLang || this.lang;
-          const utterance = new SpeechSynthesisUtterance(text);
+      // Retain global reference to prevent garbage collection mid-speech
+      (window as unknown as { __activeUtterance?: SpeechSynthesisUtterance }).__activeUtterance = utterance;
 
-          // Retain global reference to prevent garbage collection mid-speech
-          (window as unknown as { __activeUtterance?: SpeechSynthesisUtterance }).__activeUtterance = utterance;
+      const voices = window.speechSynthesis.getVoices();
+      if (voices && voices.length > 0) {
+        // Priority 1: Google Bahasa Indonesia or non-local cloud voice
+        const googleId = voices.find(v => (v.name.includes('Google') || !v.localService) && (v.lang.startsWith('id') || v.name.includes('Indonesia')));
+        // Priority 2: Named ID voice excluding broken local macOS Damayanti
+        const namedId = voices.find(v => {
+          const n = v.name.toLowerCase();
+          const l = v.lang.toLowerCase().replace(/_/g, '-');
+          return (l.startsWith('id') || n.includes('indonesia')) && !n.includes('damayanti');
+        });
+        const chosen = googleId || namedId;
+        if (chosen) utterance.voice = chosen;
+      }
 
-          // Re-check voices if not loaded yet
-          const voices = window.speechSynthesis.getVoices();
-          if (voices && voices.length > 0) {
-            const googleIdVoice = voices.find(v => {
-              const n = (v.name || '').toLowerCase();
-              const l = (v.lang || '').toLowerCase().replace(/_/g, '-');
-              return (n.includes('google') || n.includes('natural') || !v.localService) && (l.startsWith('id') || n.includes('indonesia'));
-            });
+      utterance.lang = targetLang === 'id' ? 'id-ID' : 'en-US';
+      utterance.rate = rate;
+      utterance.pitch = pitch;
 
-            const anyIdVoice = voices.find(v => {
-              const n = (v.name || '').toLowerCase();
-              const l = (v.lang || '').toLowerCase().replace(/_/g, '-');
-              return l === 'id-id' && !n.includes('damayanti');
-            });
+      utterance.onstart = () => {
+        this.notifySpeaking(true, text);
+      };
 
-            const fallbackIdVoice = voices.find(v => {
-              const l = (v.lang || '').toLowerCase();
-              const n = (v.name || '').toLowerCase();
-              return l.startsWith('id') || n.includes('indonesia') || n.includes('damayanti');
-            });
-
-            const chosenVoice = googleIdVoice || anyIdVoice || fallbackIdVoice;
-            if (chosenVoice) {
-              utterance.voice = chosenVoice;
-            }
-          }
-
-          // Strict BCP 47 language tag (NEVER use underscores)
-          utterance.lang = targetLang === 'id' ? 'id-ID' : 'en-US';
-          utterance.rate = 1.0;
-          utterance.pitch = 1.0;
-
-          utterance.onstart = () => {
-            this.notifySpeaking(true, text);
-          };
-
-          utterance.onend = () => {
-            if (this.keepAliveTimer) {
-              clearInterval(this.keepAliveTimer);
-              this.keepAliveTimer = null;
-            }
-            this.notifySpeaking(false, '');
-            if (onEnd) onEnd();
-          };
-
-          utterance.onerror = (err) => {
-            console.warn('SpeechSynthesis error, trying fallback:', err);
-            // If custom voice failed, retry with default system voice
-            if (utterance.voice) {
-              try {
-                const fallbackUtterance = new SpeechSynthesisUtterance(text);
-                (window as unknown as { __activeUtterance?: SpeechSynthesisUtterance }).__activeUtterance = fallbackUtterance;
-                fallbackUtterance.lang = targetLang === 'id' ? 'id-ID' : 'en-US';
-                fallbackUtterance.rate = rate;
-                fallbackUtterance.pitch = pitch;
-                fallbackUtterance.onstart = () => this.notifySpeaking(true, text);
-                fallbackUtterance.onend = () => {
-                  this.notifySpeaking(false, '');
-                  if (onEnd) onEnd();
-                };
-                fallbackUtterance.onerror = () => {
-                  this.notifySpeaking(false, '');
-                  if (onEnd) onEnd();
-                };
-                window.speechSynthesis.speak(fallbackUtterance);
-                window.speechSynthesis.resume();
-                return;
-              } catch {}
-            }
-
-            if (this.keepAliveTimer) {
-              clearInterval(this.keepAliveTimer);
-              this.keepAliveTimer = null;
-            }
-            this.notifySpeaking(false, '');
-            if (onEnd) onEnd();
-          };
-
-          // Chromium 15-second speech keep-alive
-          this.keepAliveTimer = window.setInterval(() => {
-            if (window.speechSynthesis.speaking && window.speechSynthesis.paused) {
-              window.speechSynthesis.resume();
-            }
-          }, 2000);
-
-          window.speechSynthesis.speak(utterance);
-          // Resume unfreezes Chrome audio pipeline on Mac
-          window.speechSynthesis.resume();
-        } catch (e) {
-          console.warn('Speech dispatch failed:', e);
-          this.notifySpeaking(false, '');
-          if (onEnd) onEnd();
+      utterance.onend = () => {
+        if (this.keepAliveTimer) {
+          clearInterval(this.keepAliveTimer);
+          this.keepAliveTimer = null;
         }
-      }, 40);
+        this.notifySpeaking(false, '');
+        if (onEnd) onEnd();
+      };
+
+      utterance.onerror = (err) => {
+        // ponytail: normal cancellations and interruptions must not loop or error
+        if (err.error === 'canceled' || err.error === 'interrupted') return;
+        if (this.keepAliveTimer) {
+          clearInterval(this.keepAliveTimer);
+          this.keepAliveTimer = null;
+        }
+        this.notifySpeaking(false, '');
+        if (onEnd) onEnd();
+      };
+
+      // Chromium keep-alive
+      this.keepAliveTimer = window.setInterval(() => {
+        if (window.speechSynthesis.speaking && window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+      }, 2000);
+
+      // Synchronous speak retains user gesture token in Chromium
+      window.speechSynthesis.speak(utterance);
     } catch {
       this.notifySpeaking(false, '');
       if (onEnd) onEnd();
