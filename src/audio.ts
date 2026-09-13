@@ -374,8 +374,47 @@ export class SpaceSoundEngine {
 
       window.speechSynthesis.speak(utterance);
     } catch {
-      // Graceful fallback if speech synthesis is disabled on device
+      // Graceful fallback
     }
+  }
+
+  // Cheerful kid-friendly voice modulation (slower rate, slightly higher pitch)
+  public speakKids(text: string) {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = this.lang === 'id' ? 'id-ID' : 'en-US';
+      utterance.rate = 0.88; // gentle, patient pacing for early learners
+      utterance.pitch = 1.25; // cheerful, friendly, animated pitch
+
+      const voices = window.speechSynthesis.getVoices();
+      const langPrefix = this.lang === 'id' ? 'id' : 'en';
+      const bestVoice = voices.find(v => v.lang.toLowerCase().startsWith(langPrefix));
+      if (bestVoice) utterance.voice = bestVoice;
+
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      // Graceful fallback
+    }
+  }
+
+  // Cheerful kids applause / celebration chime
+  public playCheer() {
+    this.playFanfare();
+    this.playPop(880);
+  }
+
+  // Random Indonesian verbal praise for children
+  public playRandomPraise() {
+    const praises = [
+      'Wah hebat sekali kamu!',
+      'Pintar sekali calon astronot hebat!',
+      'Luar biasa, jawabanmu tepat sekali!',
+      'Keren banget, kamu makin pintar!'
+    ];
+    const picked = praises[Math.floor(Math.random() * praises.length)];
+    this.speakKids(picked);
   }
 }
 

@@ -3,6 +3,7 @@
 
 import * as THREE from 'three';
 import { CELESTIAL_BODIES, type CelestialBody } from './planets-data.ts';
+import { KID_FRUIT_ANALOGIES } from './kids-curriculum.ts';
 import { PlanetTextureGenerator } from './textures-generator.ts';
 import { spaceAudio } from './audio.ts';
 import { badgesManager } from './badges-album.ts';
@@ -99,6 +100,9 @@ export class SolarSystemExplorer {
           </div>
 
           <div class="hud-actions-right">
+            <button class="btn-hud-kids-fruit" id="btn-fruit-analogy">
+              🍎 Cerita Buah Cilik
+            </button>
             <button class="btn-hud-inspect" id="btn-inspect-planet">
               🔍 Buka Data Detail
             </button>
@@ -571,6 +575,16 @@ export class SolarSystemExplorer {
       });
     }
 
+    // Fruit Analogy modal button for kids
+    const fruitBtn = this.container.querySelector('#btn-fruit-analogy');
+    if (fruitBtn) {
+      fruitBtn.addEventListener('click', () => {
+        const found = KID_FRUIT_ANALOGIES.find(f => f.planetId === this.activePlanetId) || KID_FRUIT_ANALOGIES[0];
+        spaceAudio.speakKids(found.voiceScript);
+        this.renderKidFruitModal(found);
+      });
+    }
+
     // Inspect planet modal button
     const inspectBtn = this.container.querySelector('#btn-inspect-planet');
     if (inspectBtn) {
@@ -581,6 +595,41 @@ export class SolarSystemExplorer {
         }
       });
     }
+  }
+
+  public renderKidFruitModal(analogy: typeof KID_FRUIT_ANALOGIES[0]) {
+    let modal = document.getElementById('fruit-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'fruit-modal';
+      modal.className = 'cosmic-modal-overlay';
+      document.body.appendChild(modal);
+    }
+
+    modal.innerHTML = `
+      <div class="cosmic-modal-card celebration-card">
+        <span class="fruit-emoji-huge" style="font-size:64px;">${analogy.fruitEmoji}</span>
+        <h2 style="color:var(--space-gold); font-size:24px; margin:10px 0;">${analogy.planetName} = ${analogy.fruitName}!</h2>
+        <p style="font-size:15px; line-height:1.6; margin-bottom:16px;">${analogy.fruitComparison}</p>
+        <div style="background:rgba(255,255,255,0.06); padding:14px; border-radius:12px; margin-bottom:20px; font-size:13.5px;">
+          💡 <strong>Tahukah Kamu?</strong> ${analogy.funFactKid}
+        </div>
+        <div style="display:flex; justify-content:center; gap:12px;">
+          <button class="btn-voice-speech" id="btn-repeat-fruit-voice">🔊 Dengarkan Lagi</button>
+          <button class="btn-primary-glow" id="btn-close-fruit-modal">Tutup & Mainkan</button>
+        </div>
+      </div>
+    `;
+
+    modal.classList.add('active');
+
+    modal.querySelector('#btn-repeat-fruit-voice')?.addEventListener('click', () => {
+      spaceAudio.speakKids(analogy.voiceScript);
+    });
+
+    modal.querySelector('#btn-close-fruit-modal')?.addEventListener('click', () => {
+      modal!.classList.remove('active');
+    });
   }
 
   public renderDetailModal(planet: CelestialBody) {

@@ -110,9 +110,40 @@ assert(indexHtml.includes('id="screen-home"'), 'Screen home harus ada di index.h
 assert(indexHtml.includes('id="screen-solarsystem"'), 'Screen solarsystem harus ada di index.html');
 assert(indexHtml.includes('id="screen-rocketlab"'), 'Screen rocketlab harus ada di index.html');
 assert(indexHtml.includes('id="screen-deepspace"'), 'Screen deepspace harus ada di index.html');
+assert(indexHtml.includes('id="screen-kidspathway"'), 'Screen kidspathway harus ada di index.html');
 
 const postCommitHook = readFileSync('.git/hooks/post-commit', 'utf-8');
 assert(postCommitHook.includes('git push origin main'), 'Hook post-commit harus melakukan push ke origin main');
-console.log(`✅ 6. Integrasi DOM index.html dan Git post-commit hook terverifikasi.\n`);
+console.log(`✅ 6. Integrasi DOM index.html dan Git post-commit hook terverifikasi.`);
+
+// 7. Test Early Childhood Pedagogy & Curriculum
+import { KID_LEARNING_STAGES, KID_FRUIT_ANALOGIES, PLANET_TRAIN_ORDER } from './src/kids-curriculum.ts';
+assert.strictEqual(KID_LEARNING_STAGES.length, 4, 'Kurikulum anak usia dini harus memiliki 4 tahap berjenjang');
+KID_LEARNING_STAGES.forEach((stage, idx) => {
+  assert.strictEqual(stage.stageNumber, idx + 1, `Urutan tahap anak harus runtut (Tahap ${stage.stageNumber})`);
+  assert(stage.lessons.length >= 2, `Tahap ${stage.stageNumber} harus memiliki minimal 2 modul pelajaran anak`);
+  stage.lessons.forEach(l => {
+    assert(l.voiceStory.length > 10, `Cerita audio pelajaran ${l.id} harus lengkap`);
+    assert(l.optionsKid.length >= 2, `Opsi pertanyaan anak ${l.id} harus minimal 2 pilihan`);
+    assert(l.correctKidIdx >= 0 && l.correctKidIdx < l.optionsKid.length, `Kunci jawaban ${l.id} harus valid`);
+    assert(l.praiseKid.length > 5, `Kalimat pujian ${l.id} harus ada`);
+  });
+});
+
+assert(KID_FRUIT_ANALOGIES.length >= 9, 'Skala analogi buah cilik harus memuat minimal Matahari + 8 planet');
+KID_FRUIT_ANALOGIES.forEach(f => {
+  assert(f.fruitEmoji && f.fruitName, `Analogi buah untuk ${f.planetId} harus memiliki nama dan emoji`);
+  assert(f.voiceScript.length > 15, `Narasi audio untuk ${f.planetId} harus ada dan mendidik`);
+  assert(f.fruitComparison.length > 10, `Perbandingan ukuran buah untuk ${f.planetId} harus jelas`);
+});
+
+assert.strictEqual(PLANET_TRAIN_ORDER.length, 9, 'Gerbong kereta planet harus tepat Lokomotif Matahari + 8 planet');
+const expectedTrainOrder = ['sun', 'mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
+PLANET_TRAIN_ORDER.forEach((car, i) => {
+  assert.strictEqual(car.id, expectedTrainOrder[i], `Urutan gerbong ke-${i+1} harus ${expectedTrainOrder[i]}`);
+});
+console.log(`✅ 7. Kurikulum anak usia dini (4 tahap scaffolded, analogi buah, kereta planet & narasi suara) terverifikasi 100% valid.\n`);
 
 console.log('🎉 SEMUA PENGUJIAN OTOMATIS BERHASIL DENGAN 100% SUKSES!');
+
+

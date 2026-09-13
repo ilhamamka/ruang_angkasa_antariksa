@@ -11,6 +11,7 @@ import { spaceEncyclopedia } from './chart-encyclopedia.ts';
 import { worksheetsManager } from './worksheets.ts';
 import { parentGuideManager } from './parent-guide.ts';
 import { quizController } from './questions-engine.ts';
+import { kidsPathway } from './game-kids-pathway.ts';
 
 class SpaceApp {
   private currentScreenId: string = 'screen-home';
@@ -192,6 +193,7 @@ class SpaceApp {
     // Topbar Nav Buttons
     const navMapping: { [btnId: string]: string } = {
       'btn-nav-worlds': 'screen-home',
+      'btn-nav-kidspathway': 'screen-kidspathway',
       'btn-nav-solarsystem': 'screen-solarsystem',
       'btn-nav-rocketlab': 'screen-rocketlab',
       'btn-nav-deepspace': 'screen-deepspace',
@@ -208,6 +210,12 @@ class SpaceApp {
       if (btn) {
         btn.addEventListener('click', () => this.switchScreen(targetScreen));
       }
+    }
+
+    // Hero CTA for kids pathway
+    const heroKidsBtn = document.getElementById('btn-hero-start-kids');
+    if (heroKidsBtn) {
+      heroKidsBtn.addEventListener('click', () => this.switchScreen('screen-kidspathway'));
     }
 
     // World Hub Cards on Home Screen
@@ -259,6 +267,11 @@ class SpaceApp {
 
   private mountCurrentScreen() {
     switch (this.currentScreenId) {
+      case 'screen-kidspathway': {
+        const mountPoint = document.getElementById('kidspathway-mount');
+        if (mountPoint) kidsPathway.mount(mountPoint);
+        break;
+      }
       case 'screen-solarsystem': {
         const mountPoint = document.getElementById('solarsystem-mount');
         if (mountPoint) solarExplorer.mount(mountPoint);
