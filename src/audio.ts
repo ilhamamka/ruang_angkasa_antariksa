@@ -607,66 +607,69 @@ export class SpaceSoundEngine {
   // Works with native SpeechSynthesis + Fallback Mascot Tones + Live Subtitles
   public speak(text: string, overrideLang?: 'id' | 'en') {
     if (!this.soundEnabled || !text) return;
-    this.speakInternal(text, 0.95, 1.05, overrideLang);
+    this.speakInternal(text, 0.98, 1.05, overrideLang);
   }
 
   public speakKids(text: string, onEnd?: () => void) {
     if (!this.soundEnabled || !text) return;
-    // Friendly, patient cadence for children
-    this.speakInternal(text, 0.88, 1.22, undefined, onEnd);
+    // Pacing and pitch matching working speech synthesis
+    this.speakInternal(text, 0.95, 1.05, undefined, onEnd);
   }
 
-  private speakInternal(text: string, rate = 0.9, pitch = 1.15, overrideLang?: 'id' | 'en', onEnd?: () => void) {
+  private speakInternal(text: string, rate = 0.95, pitch = 1.05, overrideLang?: 'id' | 'en', onEnd?: () => void) {
     if (typeof window === 'undefined') return;
 
-    // 1. Play immediate warm mascot tone blips for guaranteed audible sensory feedback
-    this.playMascotTones(Math.round(text.length / 8));
-
-    // 2. Display live subtitle banner
-    this.notifySpeaking(true, text);
+    // Ensure audio context is ready
+    this.initCtx();
 
     if (!('speechSynthesis' in window)) {
+      this.notifySpeaking(true, text);
       setTimeout(() => {
         this.notifySpeaking(false, '');
         if (onEnd) onEnd();
-      }, Math.max(text.length * 75, 1200));
+      }, Math.max(text.length * 75, 1500));
       return;
     }
 
     try {
-      // Cancel previous utterance
       window.speechSynthesis.cancel();
       if (this.keepAliveTimer) {
         clearInterval(this.keepAliveTimer);
         this.keepAliveTimer = null;
       }
 
-      // Chromium bug #883447: asynchronous delay after cancel() prevents speech engine freezing
+      // Asynchronous dispatch prevents race condition in Chromium/WebKit engines
       setTimeout(() => {
         try {
           if (window.speechSynthesis.paused) {
             window.speechSynthesis.resume();
           }
 
-          const utterance = new SpeechSynthesisUtterance(text);
-          // Retain global reference on window to prevent V8 Garbage Collector cutting off speech
-          (window as unknown as { __activeSpaceUtterance?: SpeechSynthesisUtterance }).__activeSpaceUtterance = utterance;
-
           const targetLang = overrideLang || this.lang;
+          const utterance = new SpeechSynthesisUtterance(text);
 
-          // Find appropriate voice
-          if (!this.voicesLoaded) {
-            this.initVoices();
+          // Retain global reference to prevent garbage collection mid-speech
+          (window as unknown as { __activeUtterance?: SpeechSynthesisUtterance }).__activeUtterance = utterance;
+
+          // Re-check voices if not loaded yet
+          if (!this.selectedVoice) {
+            const voices = window.speechSynthesis.getVoices();
+            if (voices && voices.length > 0) {
+              const idVoice = voices.find(v => {
+                const l = (v.lang || '').toLowerCase();
+                const n = (v.name || '').toLowerCase();
+                return l.startsWith('id') || l.includes('id-') || l.includes('_id') || n.includes('indonesia') || n.includes('damayanti');
+              });
+              this.selectedVoice = idVoice || null;
+            }
           }
 
-          if (this.selectedVoice) {
+          if (this.selectedVoice && (targetLang === 'id' ? (this.selectedVoice.lang || '').toLowerCase().includes('id') || (this.selectedVoice.name || '').toLowerCase().includes('damayanti') || (this.selectedVoice.name || '').toLowerCase().includes('indonesia') : true)) {
             utterance.voice = this.selectedVoice;
-            utterance.lang = this.selectedVoice.lang;
-          } else {
-            // If no specific voice matched, set target language tag
-            utterance.lang = targetLang === 'id' ? 'id-ID' : 'en-US';
           }
 
+          // Strict BCP 47 language tag (NEVER use underscores)
+          utterance.lang = targetLang === 'id' ? 'id-ID' : 'en-US';
           utterance.rate = rate;
           utterance.pitch = pitch;
 
@@ -683,7 +686,31 @@ export class SpaceSoundEngine {
             if (onEnd) onEnd();
           };
 
-          utterance.onerror = () => {
+          utterance.onerror = (err) => {
+            console.warn('SpeechSynthesis error, trying fallback:', err);
+            // If custom voice failed, retry with default system voice
+            if (utterance.voice) {
+              try {
+                const fallbackUtterance = new SpeechSynthesisUtterance(text);
+                (window as unknown as { __activeUtterance?: SpeechSynthesisUtterance }).__activeUtterance = fallbackUtterance;
+                fallbackUtterance.lang = targetLang === 'id' ? 'id-ID' : 'en-US';
+                fallbackUtterance.rate = rate;
+                fallbackUtterance.pitch = pitch;
+                fallbackUtterance.onstart = () => this.notifySpeaking(true, text);
+                fallbackUtterance.onend = () => {
+                  this.notifySpeaking(false, '');
+                  if (onEnd) onEnd();
+                };
+                fallbackUtterance.onerror = () => {
+                  this.notifySpeaking(false, '');
+                  if (onEnd) onEnd();
+                };
+                window.speechSynthesis.speak(fallbackUtterance);
+                window.speechSynthesis.resume();
+                return;
+              } catch {}
+            }
+
             if (this.keepAliveTimer) {
               clearInterval(this.keepAliveTimer);
               this.keepAliveTimer = null;
@@ -697,14 +724,17 @@ export class SpaceSoundEngine {
             if (window.speechSynthesis.speaking && window.speechSynthesis.paused) {
               window.speechSynthesis.resume();
             }
-          }, 2500);
+          }, 2000);
 
           window.speechSynthesis.speak(utterance);
-        } catch {
+          // Resume unfreezes Chrome audio pipeline on Mac
+          window.speechSynthesis.resume();
+        } catch (e) {
+          console.warn('Speech dispatch failed:', e);
           this.notifySpeaking(false, '');
           if (onEnd) onEnd();
         }
-      }, 50);
+      }, 40);
     } catch {
       this.notifySpeaking(false, '');
       if (onEnd) onEnd();
