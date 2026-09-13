@@ -15,6 +15,7 @@ const criticalFiles = [
   'src/style.css',
   'src/main.ts',
   'src/audio.ts',
+  'src/textures-generator.ts',
   'src/planets-data.ts',
   'src/rockets-data.ts',
   'src/cosmos-data.ts',

@@ -1,260 +1,586 @@
-// Interactive Solar System Explorer
-// Dynamic 2D/3D-feel Orbital Simulation & Planet Inspection Cards
+// Commercial-Grade Photorealistic 3D WebGL Solar System Simulator (Three.js)
+// Featuring Realistic PBR Lighting, Procedural Textures, Dual-layer Atmosphere, 3D Rings & Cinematic Camera
 
+import * as THREE from 'three';
 import { CELESTIAL_BODIES, type CelestialBody } from './planets-data.ts';
+import { PlanetTextureGenerator } from './textures-generator.ts';
 import { spaceAudio } from './audio.ts';
 import { badgesManager } from './badges-album.ts';
 
+interface Planet3DObject {
+  id: string;
+  data: CelestialBody;
+  mesh: THREE.Mesh;
+  orbitGroup: THREE.Group;
+  orbitRadius: number;
+  orbitSpeed: number;
+  rotationSpeed: number;
+  cloudMesh?: THREE.Mesh;
+  ringMesh?: THREE.Mesh;
+}
+
 export class SolarSystemExplorer {
   private container: HTMLElement | null = null;
-  private currentPlanet: CelestialBody = CELESTIAL_BODIES[3]; // Earth default
-  private orbitSpeed: number = 1.0;
-  private isPaused: boolean = false;
-  private animFrameId: number | null = null;
-  private angles: { [key: string]: number } = {};
+  private canvasContainer: HTMLElement | null = null;
+  private scene: THREE.Scene | null = null;
+  private camera: THREE.PerspectiveCamera | null = null;
+  private renderer: THREE.WebGLRenderer | null = null;
+  private animId: number | null = null;
 
-  constructor() {
-    CELESTIAL_BODIES.forEach((body, idx) => {
-      this.angles[body.id] = (idx * 360) / CELESTIAL_BODIES.length;
-    });
-  }
+  private planets: Planet3DObject[] = [];
+  private sunMesh: THREE.Mesh | null = null;
+  private sunLight: THREE.PointLight | null = null;
+
+  private activePlanetId: string = 'earth';
+  private targetCameraPos = new THREE.Vector3(0, 180, 420);
+  private targetLookAt = new THREE.Vector3(0, 0, 0);
+  private currentLookAt = new THREE.Vector3(0, 0, 0);
+
+  private simSpeed: number = 1.0;
+  private isPaused: boolean = false;
+
+  // Mouse drag & touch orbit controls
+  private isDragging = false;
+  private previousMousePosition = { x: 0, y: 0 };
+  private spherical = { radius: 450, theta: 0.3, phi: 1.1 };
 
   public mount(container: HTMLElement) {
     this.container = container;
-    this.render();
-    this.startAnimation();
+    this.renderUI();
+    this.initWebGL();
   }
 
   public unmount() {
-    if (this.animFrameId) {
-      cancelAnimationFrame(this.animFrameId);
-      this.animFrameId = null;
+    if (this.animId) {
+      cancelAnimationFrame(this.animId);
+      this.animId = null;
     }
-  }
-
-  public setSpeed(multiplier: number) {
-    this.orbitSpeed = multiplier;
-    this.isPaused = multiplier === 0;
-  }
-
-  private startAnimation() {
-    const orbitalRates: { [key: string]: number } = {
-      mercury: 2.2,
-      venus: 1.5,
-      earth: 1.0,
-      mars: 0.75,
-      asteroids: 0.5,
-      jupiter: 0.35,
-      saturn: 0.25,
-      uranus: 0.18,
-      neptune: 0.12,
-      pluto: 0.08
-    };
-
-    const loop = () => {
-      if (!this.isPaused) {
-        for (const id in this.angles) {
-          const rate = (orbitalRates[id] || 0.5) * this.orbitSpeed * 0.4;
-          this.angles[id] = (this.angles[id] + rate) % 360;
-          const node = document.getElementById(`orbit-node-${id}`);
-          if (node) {
-            const rad = (this.angles[id] * Math.PI) / 180;
-            const rx = parseFloat(node.getAttribute('data-rx') || '100');
-            const ry = parseFloat(node.getAttribute('data-ry') || '60');
-            const cx = 450 + rx * Math.cos(rad);
-            const cy = 300 + ry * Math.sin(rad);
-            node.setAttribute('transform', `translate(${cx}, ${cy})`);
-          }
-        }
-      }
-      this.animFrameId = requestAnimationFrame(loop);
-    };
-
-    this.animFrameId = requestAnimationFrame(loop);
-  }
-
-  public selectPlanet(planetId: string) {
-    const found = CELESTIAL_BODIES.find(p => p.id === planetId);
-    if (found) {
-      this.currentPlanet = found;
-      spaceAudio.playCelestialChime();
-      badgesManager.recordPlanetVisit(found.id);
-      this.renderDetailModal(found);
+    if (this.renderer) {
+      this.renderer.dispose();
+      this.renderer.forceContextLoss();
+      this.renderer = null;
     }
+    this.planets = [];
+    this.scene = null;
+    this.camera = null;
   }
 
-  private render() {
+  private renderUI() {
     if (!this.container) return;
 
     this.container.innerHTML = `
-      <div class="solar-system-view">
-        <!-- Control Bar -->
-        <div class="space-toolbar">
-          <div class="toolbar-title">
-            <span class="pulse-dot"></span>
-            <h3>Peta Orbit Tata Surya</h3>
+      <div class="solar-system-3d-wrapper">
+        <!-- 3D WebGL Canvas Mount -->
+        <div id="webgl-canvas-mount" class="webgl-canvas-mount"></div>
+
+        <!-- Top Sci-Fi Telemetry HUD Overlay -->
+        <div class="hud-telemetry-panel">
+          <div class="hud-target-info">
+            <span class="hud-pulse-indicator"></span>
+            <div class="hud-target-text">
+              <span class="hud-kicker">TARGET SAAT INI</span>
+              <h2 id="hud-target-name">Bumi (Earth)</h2>
+            </div>
           </div>
-          <div class="toolbar-actions">
-            <button class="orbit-speed-btn" data-speed="0">⏸ Jeda</button>
-            <button class="orbit-speed-btn active" data-speed="1">1x Normal</button>
-            <button class="orbit-speed-btn" data-speed="2.5">2.5x Cepat</button>
-            <button class="orbit-speed-btn" data-speed="6">6x Kilat</button>
+
+          <div class="hud-metrics-row">
+            <div class="hud-metric">
+              <span class="hud-lbl">JARAK KE MATAHARI</span>
+              <span class="hud-val" id="hud-metric-dist">1.0 AU (149.6 Juta km)</span>
+            </div>
+            <div class="hud-metric">
+              <span class="hud-lbl">GRAVITASI RELATIF</span>
+              <span class="hud-val" id="hud-metric-grav">1.0x Gravitasi Bumi</span>
+            </div>
+            <div class="hud-metric">
+              <span class="hud-lbl">PERIODE ORBIT (1 TAHUN)</span>
+              <span class="hud-val" id="hud-metric-orbit">365.25 Hari</span>
+            </div>
           </div>
-        </div>
 
-        <!-- Interactive SVG Orrery Canvas -->
-        <div class="orrery-wrapper">
-          <svg id="orrery-svg" viewBox="0 0 900 600" class="orrery-svg">
-            <defs>
-              <radialGradient id="spaceSunGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#fff9c4" />
-                <stop offset="35%" stop-color="#ffb300" />
-                <stop offset="85%" stop-color="#ff6f00" />
-                <stop offset="100%" stop-color="#ff3d00" opacity="0" />
-              </radialGradient>
-              <filter id="glowEffect">
-                <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
-                <feMerge>
-                  <feMergeNode in="coloredBlur"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-            </defs>
-
-            <!-- Background starry grid lines -->
-            <ellipse cx="450" cy="300" rx="420" ry="250" stroke="#2a3b5c" stroke-width="0.8" fill="none" opacity="0.2"/>
-            <ellipse cx="450" cy="300" rx="360" ry="215" stroke="#2a3b5c" stroke-width="0.8" fill="none" opacity="0.2"/>
-
-            <!-- Planet Orbit Tracks -->
-            ${this.renderOrbitTracks()}
-
-            <!-- Center Sun -->
-            <g class="sun-center" id="sun-clickable" style="cursor: pointer;">
-              <circle cx="450" cy="300" r="42" fill="url(#spaceSunGlow)" filter="url(#glowEffect)"/>
-              <circle cx="450" cy="300" r="24" fill="#ffd54f"/>
-              <text x="450" y="305" font-size="11" font-weight="900" fill="#bf360c" text-anchor="middle">MATAHARI</text>
-            </g>
-
-            <!-- Moving Planet Nodes -->
-            ${this.renderPlanetNodes()}
-          </svg>
-        </div>
-
-        <!-- Quick Planet Carousel Selector Bar at Bottom -->
-        <div class="planet-carousel-pills" id="planet-quick-pills">
-          ${CELESTIAL_BODIES.map(p => `
-            <button class="planet-pill-btn ${p.id === this.currentPlanet.id ? 'active' : ''}" data-planet-id="${p.id}">
-              <span class="pill-dot" style="background:${p.primaryColor};"></span>
-              <span class="pill-name">${p.nameId}</span>
+          <div class="hud-actions-right">
+            <button class="btn-hud-inspect" id="btn-inspect-planet">
+              🔍 Buka Data Detail
             </button>
-          `).join('')}
+          </div>
+        </div>
+
+        <!-- Bottom Cinematic Control Strip -->
+        <div class="cinematic-control-bar">
+          <div class="camera-mode-group">
+            <button class="btn-camera-view active" id="btn-view-focus">🎥 Fokus Planet</button>
+            <button class="btn-camera-view" id="btn-view-overview">🌌 Pandangan Orbit Luas</button>
+          </div>
+
+          <!-- Speed Controls -->
+          <div class="sim-speed-pills">
+            <button class="speed-pill-btn" data-spd="0">⏸ Jeda</button>
+            <button class="speed-pill-btn active" data-spd="1">1x Nyata</button>
+            <button class="speed-pill-btn" data-spd="5">5x Cepat</button>
+            <button class="speed-pill-btn" data-spd="20">20x Kilat</button>
+          </div>
+
+          <!-- Quick Planet Selector Pills -->
+          <div class="planet-quick-strip" id="planet-quick-strip">
+            <button class="quick-planet-btn" data-id="sun">☀️ Matahari</button>
+            ${CELESTIAL_BODIES.filter(p => p.id !== 'sun').map(p => `
+              <button class="quick-planet-btn ${p.id === this.activePlanetId ? 'active' : ''}" data-id="${p.id}">
+                ${p.nameId.split(' ')[0]}
+              </button>
+            `).join('')}
+          </div>
         </div>
       </div>
     `;
 
-    this.attachEventListeners();
+    this.attachUIEvents();
   }
 
-  private renderOrbitTracks(): string {
-    const radii: { [key: string]: [number, number] } = {
-      mercury: [70, 42],
-      venus: [110, 66],
-      earth: [155, 93],
-      mars: [200, 120],
-      asteroids: [240, 144],
-      jupiter: [290, 174],
-      saturn: [340, 204],
-      uranus: [385, 231],
-      neptune: [425, 255],
-      pluto: [455, 273]
+  private initWebGL() {
+    this.canvasContainer = document.getElementById('webgl-canvas-mount');
+    if (!this.canvasContainer) return;
+
+    const width = this.canvasContainer.clientWidth || window.innerWidth;
+    const height = 620;
+
+    // 1. Scene
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0x04060f);
+
+    // 2. Camera
+    this.camera = new THREE.PerspectiveCamera(45, width / height, 0.5, 8000);
+    this.camera.position.set(0, 180, 420);
+
+    // 3. Renderer with antialiasing and PBR tone mapping
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+    this.renderer.setSize(width, height);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.25;
+    this.canvasContainer.appendChild(this.renderer.domElement);
+
+    // 4. Background Starfield Skybox Particles
+    this.createDeepSpaceStars();
+
+    // 5. Build Sun with physical PointLight
+    this.buildSun();
+
+    // 6. Build All 3D Planets with Procedural Textures & Orbital Groups
+    this.buildPlanets();
+
+    // 7. Attach User Interaction (Mouse & Touch Drag/Zoom)
+    this.setupInteractions();
+
+    // 8. Focus initially on Earth
+    this.focusOnPlanet('earth', false);
+
+    // 9. Render Loop
+    const animate = () => {
+      this.animId = requestAnimationFrame(animate);
+      this.updatePhysicsAndAnimation();
+      if (this.renderer && this.scene && this.camera) {
+        this.renderer.render(this.scene, this.camera);
+      }
     };
+    this.animId = requestAnimationFrame(animate);
 
-    let markup = '';
-    for (const id in radii) {
-      const [rx, ry] = radii[id];
-      const isAsteroid = id === 'asteroids';
-      markup += `
-        <ellipse cx="450" cy="300" rx="${rx}" ry="${ry}" 
-          class="orbit-line ${isAsteroid ? 'orbit-asteroid-track' : ''}" 
-          stroke="${isAsteroid ? '#8d6e63' : '#3949ab'}" 
-          stroke-width="${isAsteroid ? '2.5' : '1.2'}" 
-          stroke-dasharray="${isAsteroid ? '4,6' : '3,3'}" 
-          fill="none" opacity="${isAsteroid ? '0.6' : '0.4'}"/>
-      `;
-    }
-    return markup;
+    // Responsive resize
+    window.addEventListener('resize', this.onResize);
   }
 
-  private renderPlanetNodes(): string {
-    const radii: { [key: string]: [number, number, number, string] } = {
-      mercury: [70, 42, 6, '#b0bec5'],
-      venus: [110, 66, 9, '#ffb74d'],
-      earth: [155, 93, 10, '#00e5ff'],
-      mars: [200, 120, 7.5, '#ff5722'],
-      asteroids: [240, 144, 5, '#8d6e63'],
-      jupiter: [290, 174, 18, '#ff9800'],
-      saturn: [340, 204, 15, '#ffd54f'],
-      uranus: [385, 231, 12, '#4dd0e1'],
-      neptune: [425, 255, 11, '#3f51b5'],
-      pluto: [455, 273, 5, '#bcaaa4']
-    };
+  private onResize = () => {
+    if (!this.canvasContainer || !this.camera || !this.renderer) return;
+    const width = this.canvasContainer.clientWidth;
+    const height = 620;
+    this.camera.aspect = width / height;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(width, height);
+  };
 
-    let markup = '';
-    for (const id in radii) {
-      const [rx, ry, r, col] = radii[id];
-      const planet = CELESTIAL_BODIES.find(p => p.id === id);
-      markup += `
-        <g id="orbit-node-${id}" class="planet-orbit-node" data-rx="${rx}" data-ry="${ry}" data-planet-id="${id}" style="cursor:pointer;">
-          <circle cx="0" cy="0" r="${r + 4}" fill="${col}" opacity="0.2"/>
-          <circle cx="0" cy="0" r="${r}" fill="${col}" stroke="#ffffff" stroke-width="1.2"/>
-          <text x="0" y="${r + 14}" font-size="9.5" font-weight="700" fill="#e0e0e0" text-anchor="middle">${planet?.nameId || id}</text>
-        </g>
-      `;
+  private createDeepSpaceStars() {
+    if (!this.scene) return;
+    const starsGeo = new THREE.BufferGeometry();
+    const count = 3500;
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+
+    for (let i = 0; i < count; i++) {
+      const u = Math.random();
+      const v = Math.random();
+      const theta = u * 2.0 * Math.PI;
+      const phi = Math.acos(2.0 * v - 1.0);
+      const r = 2500 + Math.random() * 800;
+
+      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      positions[i * 3 + 2] = r * Math.cos(phi);
+
+      // Star tints: white, icy blue, warm yellow
+      const tint = Math.random();
+      if (tint < 0.6) {
+        colors[i * 3] = 1; colors[i * 3 + 1] = 1; colors[i * 3 + 2] = 1;
+      } else if (tint < 0.85) {
+        colors[i * 3] = 0.65; colors[i * 3 + 1] = 0.85; colors[i * 3 + 2] = 1;
+      } else {
+        colors[i * 3] = 1; colors[i * 3 + 1] = 0.88; colors[i * 3 + 2] = 0.65;
+      }
     }
-    return markup;
+
+    starsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    starsGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const starsMat = new THREE.PointsMaterial({
+      size: 2.2,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.95
+    });
+
+    const starPoints = new THREE.Points(starsGeo, starsMat);
+    this.scene.add(starPoints);
   }
 
-  private attachEventListeners() {
+  private buildSun() {
+    if (!this.scene) return;
+
+    // Glowing Sun sphere
+    const sunTexture = PlanetTextureGenerator.createSunTexture(1024, 512);
+    const sunGeo = new THREE.SphereGeometry(32, 48, 48);
+    const sunMat = new THREE.MeshBasicMaterial({
+      map: sunTexture
+    });
+
+    this.sunMesh = new THREE.Mesh(sunGeo, sunMat);
+    this.scene.add(this.sunMesh);
+
+    // Glowing Atmospheric Corona Shell
+    const coronaGeo = new THREE.SphereGeometry(36, 32, 32);
+    const coronaMat = new THREE.MeshBasicMaterial({
+      color: 0xffa000,
+      transparent: true,
+      opacity: 0.35,
+      side: THREE.BackSide
+    });
+    const corona = new THREE.Mesh(coronaGeo, coronaMat);
+    this.sunMesh.add(corona);
+
+    // Physical Omni-directional Sun Light
+    this.sunLight = new THREE.PointLight(0xfffaed, 3.8, 6000, 0.4);
+    this.scene.add(this.sunLight);
+
+    // Ambient space light for viewing dark side
+    const ambientLight = new THREE.AmbientLight(0x222a44, 0.45);
+    this.scene.add(ambientLight);
+  }
+
+  private buildPlanets() {
+    if (!this.scene) return;
+
+    // Relative visual scale for clear 3D exploration
+    const planetSpecs: Array<{
+      id: string;
+      radius: number;
+      orbitRadius: number;
+      orbitSpeed: number;
+      rotSpeed: number;
+      tiltDeg: number;
+      texture: THREE.CanvasTexture;
+      hasRings?: boolean;
+      hasClouds?: boolean;
+    }> = [
+      { id: 'mercury', radius: 4.0, orbitRadius: 65, orbitSpeed: 0.038, rotSpeed: 0.005, tiltDeg: 0.03, texture: PlanetTextureGenerator.createMercuryTexture() },
+      { id: 'venus', radius: 7.2, orbitRadius: 95, orbitSpeed: 0.026, rotSpeed: -0.003, tiltDeg: 177, texture: PlanetTextureGenerator.createVenusTexture() },
+      { id: 'earth', radius: 7.8, orbitRadius: 135, orbitSpeed: 0.018, rotSpeed: 0.012, tiltDeg: 23.5, texture: PlanetTextureGenerator.createEarthTexture(), hasClouds: true },
+      { id: 'mars', radius: 5.2, orbitRadius: 175, orbitSpeed: 0.014, rotSpeed: 0.011, tiltDeg: 25.2, texture: PlanetTextureGenerator.createMarsTexture() },
+      { id: 'jupiter', radius: 18.5, orbitRadius: 245, orbitSpeed: 0.008, rotSpeed: 0.028, tiltDeg: 3.1, texture: PlanetTextureGenerator.createJupiterTexture() },
+      { id: 'saturn', radius: 14.5, orbitRadius: 320, orbitSpeed: 0.0055, rotSpeed: 0.024, tiltDeg: 26.7, texture: PlanetTextureGenerator.createSaturnTexture(), hasRings: true },
+      { id: 'uranus', radius: 10.5, orbitRadius: 390, orbitSpeed: 0.0038, rotSpeed: -0.016, tiltDeg: 97.8, texture: PlanetTextureGenerator.createUranusTexture() },
+      { id: 'neptune', radius: 9.8, orbitRadius: 460, orbitSpeed: 0.0028, rotSpeed: 0.018, tiltDeg: 28.3, texture: PlanetTextureGenerator.createNeptuneTexture() },
+      { id: 'pluto', radius: 3.2, orbitRadius: 520, orbitSpeed: 0.0018, rotSpeed: 0.004, tiltDeg: 122.5, texture: PlanetTextureGenerator.createPlutoTexture() }
+    ];
+
+    planetSpecs.forEach(spec => {
+      const data = CELESTIAL_BODIES.find(p => p.id === spec.id)!;
+
+      // 1. Orbit Group Pivot
+      const orbitGroup = new THREE.Group();
+      this.scene!.add(orbitGroup);
+
+      // 2. Translucent Circular Orbit Track Line
+      const orbitPoints: THREE.Vector3[] = [];
+      const segments = 128;
+      for (let i = 0; i <= segments; i++) {
+        const theta = (i / segments) * Math.PI * 2;
+        orbitPoints.push(new THREE.Vector3(Math.cos(theta) * spec.orbitRadius, 0, Math.sin(theta) * spec.orbitRadius));
+      }
+      const orbitLineGeo = new THREE.BufferGeometry().setFromPoints(orbitPoints);
+      const orbitLineMat = new THREE.LineBasicMaterial({
+        color: 0x3d5afe,
+        transparent: true,
+        opacity: 0.22
+      });
+      const orbitLine = new THREE.LineLoop(orbitLineGeo, orbitLineMat);
+      this.scene!.add(orbitLine);
+
+      // 3. Planet Mesh with PBR Material
+      const planetGeo = new THREE.SphereGeometry(spec.radius, 40, 40);
+      const planetMat = new THREE.MeshStandardMaterial({
+        map: spec.texture,
+        roughness: 0.85,
+        metalness: 0.15
+      });
+      const planetMesh = new THREE.Mesh(planetGeo, planetMat);
+      planetMesh.position.set(spec.orbitRadius, 0, 0);
+      planetMesh.rotation.z = (spec.tiltDeg * Math.PI) / 180; // axial tilt!
+      orbitGroup.add(planetMesh);
+
+      let cloudMesh: THREE.Mesh | undefined;
+      let ringMesh: THREE.Mesh | undefined;
+
+      // 4. Special Earth Clouds Layer
+      if (spec.hasClouds) {
+        const cloudGeo = new THREE.SphereGeometry(spec.radius * 1.02, 40, 40);
+        const cloudMat = new THREE.MeshStandardMaterial({
+          map: PlanetTextureGenerator.createEarthCloudsTexture(),
+          transparent: true,
+          opacity: 0.85,
+          blending: THREE.NormalBlending
+        });
+        cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
+        planetMesh.add(cloudMesh);
+      }
+
+      // 5. Special Saturn 3D Rings
+      if (spec.hasRings) {
+        const ringGeo = new THREE.RingGeometry(spec.radius * 1.35, spec.radius * 2.5, 64);
+        // Rotate geometry to horizontal plane
+        ringGeo.rotateX(Math.PI / 2);
+
+        const ringTexture = PlanetTextureGenerator.createSaturnRingsTexture();
+        const ringMat = new THREE.MeshStandardMaterial({
+          map: ringTexture,
+          side: THREE.DoubleSide,
+          transparent: true,
+          roughness: 0.6
+        });
+        ringMesh = new THREE.Mesh(ringGeo, ringMat);
+        planetMesh.add(ringMesh);
+      }
+
+      this.planets.push({
+        id: spec.id,
+        data,
+        mesh: planetMesh,
+        orbitGroup,
+        orbitRadius: spec.orbitRadius,
+        orbitSpeed: spec.orbitSpeed,
+        rotationSpeed: spec.rotSpeed,
+        cloudMesh,
+        ringMesh
+      });
+    });
+  }
+
+  private setupInteractions() {
+    if (!this.renderer) return;
+    const dom = this.renderer.domElement;
+
+    dom.addEventListener('mousedown', (e) => {
+      this.isDragging = true;
+      this.previousMousePosition = { x: e.clientX, y: e.clientY };
+    });
+
+    window.addEventListener('mouseup', () => {
+      this.isDragging = false;
+    });
+
+    dom.addEventListener('mousemove', (e) => {
+      if (!this.isDragging) return;
+      const deltaX = e.clientX - this.previousMousePosition.x;
+      const deltaY = e.clientY - this.previousMousePosition.y;
+
+      this.spherical.theta -= deltaX * 0.005;
+      this.spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, this.spherical.phi - deltaY * 0.005));
+
+      this.previousMousePosition = { x: e.clientX, y: e.clientY };
+    });
+
+    // Zoom wheel
+    dom.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      this.spherical.radius = Math.max(25, Math.min(1800, this.spherical.radius + e.deltaY * 0.8));
+    }, { passive: false });
+
+    // Touch support
+    let touchStartDist = 0;
+    dom.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        this.isDragging = true;
+        this.previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      } else if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        touchStartDist = Math.hypot(dx, dy);
+      }
+    });
+
+    dom.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 1 && this.isDragging) {
+        const deltaX = e.touches[0].clientX - this.previousMousePosition.x;
+        const deltaY = e.touches[0].clientY - this.previousMousePosition.y;
+        this.spherical.theta -= deltaX * 0.005;
+        this.spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, this.spherical.phi - deltaY * 0.005));
+        this.previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      } else if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.hypot(dx, dy);
+        const diff = touchStartDist - dist;
+        this.spherical.radius = Math.max(25, Math.min(1800, this.spherical.radius + diff * 1.5));
+        touchStartDist = dist;
+      }
+    });
+
+    dom.addEventListener('touchend', () => {
+      this.isDragging = false;
+    });
+  }
+
+  public focusOnPlanet(planetId: string, playSound = true) {
+    this.activePlanetId = planetId;
+    if (playSound) spaceAudio.playCelestialChime();
+    badgesManager.recordPlanetVisit(planetId);
+
+    // Update Telemetry HUD
+    const target = CELESTIAL_BODIES.find(p => p.id === planetId);
+    if (target) {
+      const nameEl = document.getElementById('hud-target-name');
+      const distEl = document.getElementById('hud-metric-dist');
+      const gravEl = document.getElementById('hud-metric-grav');
+      const orbitEl = document.getElementById('hud-metric-orbit');
+
+      if (nameEl) nameEl.textContent = `${target.nameId} (${target.nameEn})`;
+      if (distEl) distEl.textContent = `${target.distanceFromSunAu} AU (${target.distanceFromSunKmMillion} Juta km)`;
+      if (gravEl) gravEl.textContent = `${target.gravityRatio}x Gravitasi Bumi`;
+      if (orbitEl) orbitEl.textContent = `${target.orbitalPeriod}`;
+    }
+
+    // Update selector pills
+    const pills = document.querySelectorAll('.quick-planet-btn');
+    pills.forEach(p => {
+      p.classList.toggle('active', p.getAttribute('data-id') === planetId);
+    });
+
+    // Set close-up distance based on target size
+    if (planetId === 'sun') {
+      this.spherical.radius = 95;
+    } else {
+      const pObj = this.planets.find(p => p.id === planetId);
+      if (pObj) {
+        const r = (pObj.mesh.geometry as THREE.SphereGeometry).parameters.radius;
+        this.spherical.radius = Math.max(28, r * 3.6);
+      }
+    }
+  }
+
+  private updatePhysicsAndAnimation() {
+    if (!this.isPaused) {
+      // 1. Rotate Sun on axis
+      if (this.sunMesh) {
+        this.sunMesh.rotation.y += 0.002 * this.simSpeed;
+      }
+
+      // 2. Orbits & Self-rotations of all planets
+      this.planets.forEach(p => {
+        p.orbitGroup.rotation.y += p.orbitSpeed * 0.15 * this.simSpeed;
+        p.mesh.rotation.y += p.rotationSpeed * this.simSpeed;
+
+        // Rotate clouds at independent speed
+        if (p.cloudMesh) {
+          p.cloudMesh.rotation.y += 0.004 * this.simSpeed;
+        }
+      });
+    }
+
+    // 3. Smooth Camera Fly-To Lerp
+    if (this.camera) {
+      let targetCenter = new THREE.Vector3(0, 0, 0);
+
+      if (this.activePlanetId !== 'sun') {
+        const activeObj = this.planets.find(p => p.id === this.activePlanetId);
+        if (activeObj) {
+          activeObj.mesh.getWorldPosition(targetCenter);
+        }
+      }
+
+      this.targetLookAt.copy(targetCenter);
+
+      // Spherical camera orbit math
+      const sinPhi = Math.sin(this.spherical.phi);
+      const cosPhi = Math.cos(this.spherical.phi);
+      const sinTheta = Math.sin(this.spherical.theta);
+      const cosTheta = Math.cos(this.spherical.theta);
+
+      this.targetCameraPos.set(
+        targetCenter.x + this.spherical.radius * sinPhi * sinTheta,
+        targetCenter.y + this.spherical.radius * cosPhi,
+        targetCenter.z + this.spherical.radius * sinPhi * cosTheta
+      );
+
+      // Smooth interpolation
+      this.camera.position.lerp(this.targetCameraPos, 0.08);
+      this.currentLookAt.lerp(this.targetLookAt, 0.08);
+      this.camera.lookAt(this.currentLookAt);
+    }
+  }
+
+  private attachUIEvents() {
     if (!this.container) return;
 
-    // Speed buttons
-    const speedBtns = this.container.querySelectorAll('.orbit-speed-btn');
-    speedBtns.forEach(btn => {
+    // Quick planet buttons
+    const pills = this.container.querySelectorAll('.quick-planet-btn');
+    pills.forEach(pill => {
+      pill.addEventListener('click', (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+        if (id) this.focusOnPlanet(id);
+      });
+    });
+
+    // Speed pills
+    const spdButtons = this.container.querySelectorAll('.speed-pill-btn');
+    spdButtons.forEach(btn => {
       btn.addEventListener('click', (e) => {
         const target = e.currentTarget as HTMLElement;
-        const spd = parseFloat(target.getAttribute('data-speed') || '1');
-        speedBtns.forEach(b => b.classList.remove('active'));
+        const spd = parseFloat(target.getAttribute('data-spd') || '1');
+        spdButtons.forEach(b => b.classList.remove('active'));
         target.classList.add('active');
-        this.setSpeed(spd);
+        this.simSpeed = spd;
+        this.isPaused = spd === 0;
         spaceAudio.playPop(520);
       });
     });
 
-    // Planet nodes click in SVG
-    const nodes = this.container.querySelectorAll('.planet-orbit-node');
-    nodes.forEach(node => {
-      node.addEventListener('click', () => {
-        const pId = node.getAttribute('data-planet-id');
-        if (pId) this.selectPlanet(pId);
-      });
-    });
-
-    // Sun center click
-    const sunEl = this.container.querySelector('#sun-clickable');
-    if (sunEl) {
-      sunEl.addEventListener('click', () => {
-        this.selectPlanet('sun');
+    // Overview button
+    const overviewBtn = this.container.querySelector('#btn-view-overview');
+    if (overviewBtn) {
+      overviewBtn.addEventListener('click', () => {
+        this.activePlanetId = 'sun';
+        this.spherical.radius = 820;
+        this.spherical.phi = 0.85;
+        spaceAudio.playPop(440);
       });
     }
 
-    // Quick carousel pills
-    const pills = this.container.querySelectorAll('.planet-pill-btn');
-    pills.forEach(pill => {
-      pill.addEventListener('click', () => {
-        const pId = pill.getAttribute('data-planet-id');
-        if (pId) this.selectPlanet(pId);
+    // Inspect planet modal button
+    const inspectBtn = this.container.querySelector('#btn-inspect-planet');
+    if (inspectBtn) {
+      inspectBtn.addEventListener('click', () => {
+        const target = CELESTIAL_BODIES.find(p => p.id === this.activePlanetId);
+        if (target) {
+          this.renderDetailModal(target);
+        }
       });
-    });
+    }
   }
 
   public renderDetailModal(planet: CelestialBody) {
@@ -334,14 +660,6 @@ export class SolarSystemExplorer {
                 ${planet.funFactsId.map(f => `<li>${f}</li>`).join('')}
               </ul>
             </div>
-
-            <!-- Missions section -->
-            <div class="missions-section">
-              <h4>🛰️ Misi & Wahana Terkenal:</h4>
-              <div class="mission-tags">
-                ${planet.missions.map(m => `<span class="mission-tag">${m}</span>`).join('')}
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -349,7 +667,6 @@ export class SolarSystemExplorer {
 
     modal.classList.add('active');
 
-    // Speech audio button
     const speechBtn = modal.querySelector('#btn-planet-speech');
     if (speechBtn) {
       speechBtn.addEventListener('click', () => {
@@ -357,7 +674,6 @@ export class SolarSystemExplorer {
       });
     }
 
-    // Close button
     const closeBtn = modal.querySelector('#btn-close-planet-modal');
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
@@ -365,13 +681,6 @@ export class SolarSystemExplorer {
         spaceAudio.playPop(350);
       });
     }
-
-    // Backdrop click close
-    modal.onclick = (e) => {
-      if (e.target === modal) {
-        modal!.classList.remove('active');
-      }
-    };
   }
 }
 
