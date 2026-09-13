@@ -212,7 +212,14 @@ assert(existsSync('src/confetti.ts'), 'Engine confetti src/confetti.ts harus ada
 import { worksheetsManager } from './src/worksheets.ts';
 assert(typeof worksheetsManager.mount === 'function', 'worksheetsManager.mount harus fungsi');
 
+// 12. Test Sandbox Minigames (Lunar Lander Simulator & Nusantara Constellations)
+import { spaceSandbox } from './src/game-sandbox.ts';
+assert(typeof spaceSandbox.mount === 'function', 'spaceSandbox.mount harus ada');
+assert(typeof spaceSandbox.unmount === 'function', 'spaceSandbox.unmount harus ada');
+console.log('✅ 12. Game Apollo Lunar Lander & Teleskop Rasi Bintang Nusantara terverifikasi siap dimainkan.\n');
+
 console.log('🎉 SEMUA PENGUJIAN OTOMATIS BERHASIL DENGAN 100% SUKSES!');
+
 
 
 

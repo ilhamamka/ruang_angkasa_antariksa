@@ -236,6 +236,11 @@ class SpaceApp {
     if (cardDeep) {
       cardDeep.addEventListener('click', () => this.switchScreen('screen-deepspace'));
     }
+
+    const cardSandbox = document.getElementById('card-open-sandbox');
+    if (cardSandbox) {
+      cardSandbox.addEventListener('click', () => this.switchScreen('screen-sandbox'));
+    }
   }
 
   // --- Commercial VIP & Parental Gate System ---
