@@ -82,6 +82,10 @@
           <button id="btn-toggle-fullscreen" class="capsule-btn" type="button" title="Layar Penuh Kiosk" aria-label="Layar Penuh">
             <span>⛶</span>
           </button>
+          <div class="capsule-divider"></div>
+          <button id="btn-topbar-vip" class="capsule-btn btn-vip-gold" type="button" title="Akses Penuh VIP">
+            <span id="vip-status-text">👑 VIP</span>
+          </button>
         </div>
       </div>
     </header>
@@ -241,6 +245,94 @@
         <div id="parent-guide-mount"></div>
       </section>
     </main>
+  </div>
+
+  <!-- MODAL: VIP COMMERCIAL ACCESS PAYWALL -->
+  <div id="modal-vip" class="cosmic-modal-overlay">
+    <div class="cosmic-modal-card vip-modal-card">
+      <div class="modal-header">
+        <div>
+          <span class="modal-kicker">PRODUK DIGITAL RESMI · EDISI LENGKAP</span>
+          <h2 class="modal-title">🚀 Buka Semua Petualangan VIP Antariksa!</h2>
+        </div>
+        <button class="btn-close-modal" id="btn-close-vip" type="button">✕</button>
+      </div>
+
+      <p class="vip-subdesc">
+        Buka akses tanpa batas ke semua tahap kurikulum anak (Tahap 2 Kereta Planet, Tahap 3 Peluncuran Roket Balon & Baju Astronot, Tahap 4 Tantangan Juara), simulator orbit 3D, dan cetak sertifikat resmi bintang emas!
+      </p>
+
+      <div class="vip-offer-banner">
+        <div class="vip-banner-top">
+          <span class="promo-badge">PROMO DISKON 67%</span>
+          <span class="vip-timer-badge">
+            ⏳ Berakhir: <span id="vip-countdown">08:45:12</span>
+          </span>
+        </div>
+        <div class="vip-price-tag">
+          <span class="strike-price">Rp 149.000</span>
+          <span class="promo-price">Rp 49.000</span>
+        </div>
+        <div class="vip-trust-line">
+          🔥 Telah dipercaya oleh 1.480+ orang tua & guru di seluruh Indonesia
+        </div>
+        <small class="vip-onetime-note">Bayar 1 Kali · Akses Seumur Hidup Tanpa Biaya Langganan</small>
+      </div>
+
+      <ul class="vip-features-list">
+        <li><span class="vip-icon">✅</span><span><b>4 Tahap Lengkap Kurikulum Anak Usia Dini:</b> Dari Matahari hingga Neptunus, Kereta Planet, dan Stasiun Luar Angkasa.</span></li>
+        <li><span class="vip-icon">✅</span><span><b>Narasi Suara Ceria & Analogi Buah:</b> Dilengkapi rekaman suara asli dan analogi konkret buah-buahan ramah anak.</span></li>
+        <li><span class="vip-icon">✅</span><span><b>Simulator Fisika 3D Penuh:</b> Rakit roket bertingkat, uji dorongan TWR nyata, dan jelajahi lubang hitam relativistik.</span></li>
+        <li><span class="vip-icon">✅</span><span><b>Bank Kuis Interaktif & XP Rank:</b> Lebih dari 30 soal kuis adaptif dengan feedback audio dan confetti juara.</span></li>
+        <li><span class="vip-icon">✅</span><span><b>🎁 BONUS VIP Spesial:</b> 10 Lembar Kerja Mewarnai (PDF) & Piagam Ijazah Astronot Resmi Bintang Emas.</span></li>
+        <li><span class="vip-icon">✅</span><span><b>100% Bebas Iklan & Aman:</b> Dirancang khusus anak, tanpa konten berbahaya, aman dimainkan mandiri.</span></li>
+      </ul>
+
+      <!-- Form Aktivasi Kode Lisensi VIP -->
+      <div class="vip-activation-box">
+        <h4>🔑 Sudah Beli? Masukkan Kode Akses VIP Anda:</h4>
+        <p>Ketik kode aktivasi dari invoice pembelian Lynk.id / pesan WhatsApp Anda:</p>
+        <div class="vip-input-row">
+          <input type="text" id="input-license-code" class="vip-code-input" placeholder="Contoh: ANTARIKSA2026 / VIP2026">
+          <button id="btn-activate-license" class="btn-activate-code" type="button">Aktifkan</button>
+        </div>
+        <p id="license-status-msg" class="license-status-msg" style="display:none;"></p>
+      </div>
+
+      <div class="vip-payment-buttons">
+        <a id="btn-pay-lynk" class="btn-pay-lynk" href="https://lynk.id/kelasbena/67evk25pkw8d" target="_blank" rel="noopener noreferrer">
+          💳 Beli Instan via Lynk.id (QRIS, GoPay, OVO, Transfer)
+        </a>
+        <a id="btn-pay-wa" class="btn-pay-wa" href="#" target="_blank" rel="noopener noreferrer">
+          💬 Pesan via WhatsApp CS Admin
+        </a>
+        <button id="btn-demo-toggle-vip" class="btn-evaluator-vip" type="button">
+          🔑 Mode Evaluator / Coba VIP Instan (1-Klik)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PARENTAL SAFETY GATE -->
+  <div id="modal-parent-gate" class="cosmic-modal-overlay">
+    <div class="cosmic-modal-card parent-gate-card">
+      <div class="modal-header">
+        <div>
+          <span class="modal-kicker">PERLINDUNGAN ORANG TUA</span>
+          <h2 class="modal-title">Kunci Keamanan Orang Tua 🛡️</h2>
+        </div>
+        <button class="btn-close-modal" id="btn-close-gate" type="button">✕</button>
+      </div>
+      <p class="gate-desc">
+        Untuk memastikan keamanan anak, mohon selesaikan perhitungan matematika sederhana ini sebelum membuka menu pembayaran:
+      </p>
+      <div class="gate-box">
+        <div id="gate-question-text" class="gate-question">Berapa 7 × 8?</div>
+        <input type="number" id="gate-answer-input" class="gate-input" placeholder="Jawaban...">
+        <button id="btn-submit-gate" class="btn-submit-gate" type="button">Buka Akses</button>
+      </div>
+      <p id="gate-error-msg" class="gate-error-msg" style="display:none;">Jawaban belum tepat, silakan coba lagi!</p>
+    </div>
   </div>
 
   <script type="module" src="/src/main.ts"></script>

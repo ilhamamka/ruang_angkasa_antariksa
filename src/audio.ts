@@ -205,6 +205,13 @@ export class SpaceSoundEngine {
 
   // Stop any active speech cleanly
   public stopSpeaking() {
+    if (this.currentHtmlAudio) {
+      try {
+        this.currentHtmlAudio.pause();
+        this.currentHtmlAudio.currentTime = 0;
+      } catch {}
+      this.currentHtmlAudio = null;
+    }
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       try {
         window.speechSynthesis.cancel();
@@ -634,11 +641,73 @@ export class SpaceSoundEngine {
     this.speakInternal(text, 0.98, 1.05, overrideLang);
   }
 
+  private currentHtmlAudio: HTMLAudioElement | null = null;
+
+  // Map Indonesian text snippets to crisp pre-rendered studio audio files
+  private getMatchingStoryAudio(text: string): string | null {
+    const t = text.toLowerCase();
+    if (t.includes('bintang yang paling dekat') || t.includes('lampu kamar raksasa')) return '/audio/stories/l1_sun.m4a';
+    if (t.includes('planet kita tercinta') || t.includes('penuh dengan air laut')) return '/audio/stories/l1_earth.m4a';
+    if (t.includes('teman setia bumi di malam hari') || t.includes('senyuman sabit')) return '/audio/stories/l1_moon.m4a';
+    if (t.includes('ayo nyanyikan bersama') || t.includes('me-ve-bu-ma-ju-sa-u-ne')) return '/audio/stories/l2_song.m4a';
+    if (t.includes('dua raksasa yang sangat baik hati') || t.includes('batu antariksa')) return '/audio/stories/l2_giants.m4a';
+    if (t.includes('meniup balon lalu melepasnya') || t.includes('aksi dan reaksi')) return '/audio/stories/l3_balloon_rocket.m4a';
+    if (t.includes('memakai baju putih bertekanan') || t.includes('kaca helmnya dilapisi')) return '/audio/stories/l3_suit.m4a';
+    if (t.includes('pesawat stasiun antariksa') || t.includes('salto di udara')) return '/audio/stories/l3_zerog.m4a';
+    if (t.includes('siapakah planet yang ukurannya paling raksasa') || t.includes('semangka')) return '/audio/stories/l4_scale_quiz.m4a';
+    if (t.includes('tanahnya merah berkarat') || t.includes('robot-robot kecil')) return '/audio/stories/l4_mars_quiz.m4a';
+    // Fruits
+    if (t.includes('bola api raksasa yang sangat ramah')) return '/audio/stories/fruit_sun.m4a';
+    if (t.includes('biji kacang hijau')) return '/audio/stories/fruit_mercury.m4a';
+    if (t.includes('selimut awan kuning')) return '/audio/stories/fruit_venus.m4a';
+    if (t.includes('ceri kecil berwarna biru') || t.includes('rumah kita tercinta! warnanya biru')) return '/audio/stories/fruit_earth.m4a';
+    if (t.includes('mars si planet merah')) return '/audio/stories/fruit_mars.m4a';
+    if (t.includes('raja semangka raksasa')) return '/audio/stories/fruit_jupiter.m4a';
+    if (t.includes('putri mahkota melon')) return '/audio/stories/fruit_saturn.m4a';
+    if (t.includes('apel hijau beku')) return '/audio/stories/fruit_uranus.m4a';
+    if (t.includes('buah blueberry biru')) return '/audio/stories/fruit_neptune.m4a';
+    return null;
+  }
+
   public speakKids(text: string, onEnd?: () => void) {
     if (!text) return;
-    // Auto-unmute when explicit speech is requested
     this.soundEnabled = true;
     this.updateSoundToggleUi();
+
+    // 1. Natural Audio File: Guaranteed clear Indonesian voice on all devices
+    const matchedFile = this.getMatchingStoryAudio(text);
+    if (matchedFile && typeof Audio !== 'undefined') {
+      try {
+        this.stopSpeaking();
+        this.initCtx();
+        this.notifySpeaking(true, text);
+        this.playPop(520);
+
+        const audio = new Audio(matchedFile);
+        this.currentHtmlAudio = audio;
+
+        audio.onended = () => {
+          this.currentHtmlAudio = null;
+          this.notifySpeaking(false, '');
+          if (onEnd) onEnd();
+        };
+
+        audio.onerror = () => {
+          this.currentHtmlAudio = null;
+          this.speakInternal(text, 0.96, 1.05, undefined, onEnd);
+        };
+
+        audio.play().catch(() => {
+          // Fall back to Web Speech API
+          this.speakInternal(text, 0.96, 1.05, undefined, onEnd);
+        });
+        return;
+      } catch {
+        // Fall back to TTS
+      }
+    }
+
+    // 2. Fallback to Web Speech API
     this.speakInternal(text, 0.95, 1.05, undefined, onEnd);
   }
 

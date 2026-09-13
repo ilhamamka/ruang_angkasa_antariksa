@@ -12,6 +12,7 @@ import { worksheetsManager } from './worksheets.ts';
 import { parentGuideManager } from './parent-guide.ts';
 import { quizController } from './questions-engine.ts';
 import { kidsPathway } from './game-kids-pathway.ts';
+import { commercial } from './commercial.ts';
 
 class SpaceApp {
   private currentScreenId: string = 'screen-home';
@@ -28,6 +29,7 @@ class SpaceApp {
     this.initStarfield();
     this.initNavigation();
     this.initAudioAndControls();
+    this.initCommercialAndVIP();
     this.updateHeroStats();
     this.mountCurrentScreen();
   }
@@ -233,6 +235,142 @@ class SpaceApp {
     if (cardDeep) {
       cardDeep.addEventListener('click', () => this.switchScreen('screen-deepspace'));
     }
+  }
+
+  // --- Commercial VIP & Parental Gate System ---
+  private currentGateAnswer: number = 0;
+
+  private openParentGate(onSuccess: () => void) {
+    const q = commercial.generateParentGateQuestion();
+    this.currentGateAnswer = q.answer;
+
+    const qEl = document.getElementById('gate-question-text');
+    const inputEl = document.getElementById('gate-answer-input') as HTMLInputElement;
+    const errEl = document.getElementById('gate-error-msg');
+    const modal = document.getElementById('modal-parent-gate');
+
+    if (qEl) qEl.textContent = q.question;
+    if (inputEl) inputEl.value = '';
+    if (errEl) errEl.style.display = 'none';
+    if (modal) modal.classList.add('active');
+
+    const submitBtn = document.getElementById('btn-submit-gate');
+    if (submitBtn) {
+      submitBtn.onclick = () => {
+        const val = parseInt(inputEl?.value || '0', 10);
+        if (val === this.currentGateAnswer) {
+          if (modal) modal.classList.remove('active');
+          onSuccess();
+        } else {
+          if (errEl) errEl.style.display = 'block';
+          spaceAudio.playPop(220);
+        }
+      };
+    }
+  }
+
+  private openVipModal() {
+    const modal = document.getElementById('modal-vip');
+    if (modal) modal.classList.add('active');
+
+    const waBtn = document.getElementById('btn-pay-wa') as HTMLAnchorElement;
+    if (waBtn) waBtn.href = commercial.getWhatsAppOrderUrl();
+  }
+
+  private updateVipUI() {
+    const vipStatusText = document.getElementById('vip-status-text');
+    if (vipStatusText) {
+      vipStatusText.textContent = commercial.isVIP() ? '👑 VIP AKTIF' : '👑 VIP';
+    }
+    // Re-render current screen if it's kids pathway to update lock badges
+    if (this.currentScreenId === 'screen-kidspathway') {
+      const mountPoint = document.getElementById('kidspathway-mount');
+      if (mountPoint) kidsPathway.mount(mountPoint);
+    }
+  }
+
+  private initCommercialAndVIP() {
+    // Check URL query parameters for instant activation (?code=... or ?vip=1)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code') || urlParams.get('vip') || urlParams.get('license');
+      if (code) {
+        commercial.activateLicenseCode(code);
+      }
+    } catch {}
+
+    this.updateVipUI();
+
+    // Topbar VIP button
+    const vipBtn = document.getElementById('btn-topbar-vip');
+    if (vipBtn) {
+      vipBtn.addEventListener('click', () => {
+        if (commercial.isVIP()) {
+          this.openVipModal();
+        } else {
+          this.openParentGate(() => this.openVipModal());
+        }
+      });
+    }
+
+    // Window event from locked stages
+    window.addEventListener('open-vip-gate', () => {
+      this.openParentGate(() => this.openVipModal());
+    });
+
+    // Close modal buttons
+    document.getElementById('btn-close-vip')?.addEventListener('click', () => {
+      document.getElementById('modal-vip')?.classList.remove('active');
+    });
+    document.getElementById('btn-close-gate')?.addEventListener('click', () => {
+      document.getElementById('modal-parent-gate')?.classList.remove('active');
+    });
+
+    // License code activation form
+    const btnActivate = document.getElementById('btn-activate-license');
+    const inputCode = document.getElementById('input-license-code') as HTMLInputElement;
+    const statusMsg = document.getElementById('license-status-msg');
+
+    if (btnActivate && inputCode && statusMsg) {
+      btnActivate.addEventListener('click', () => {
+        const raw = inputCode.value.trim();
+        if (!raw) {
+          statusMsg.textContent = 'Silakan masukkan kode akses terlebih dahulu.';
+          statusMsg.style.color = '#ff3b30';
+          statusMsg.style.display = 'block';
+          return;
+        }
+
+        const res = commercial.activateLicenseCode(raw);
+        statusMsg.textContent = res.message;
+        statusMsg.style.color = res.success ? '#4ade80' : '#ff3b30';
+        statusMsg.style.display = 'block';
+
+        if (res.success) {
+          spaceAudio.playFanfare();
+          this.updateVipUI();
+          inputCode.value = '';
+        } else {
+          spaceAudio.playPop(260);
+        }
+      });
+    }
+
+    // Evaluator 1-click test toggle button
+    document.getElementById('btn-demo-toggle-vip')?.addEventListener('click', () => {
+      const next = !commercial.isVIP();
+      commercial.setVIP(next);
+      if (next) spaceAudio.playFanfare();
+      this.updateVipUI();
+      document.getElementById('modal-vip')?.classList.remove('active');
+      alert(next ? '🎉 Akses VIP Berhasil Diaktifkan! Semua Tahap Kurikulum Terbuka Bebas.' : 'Akses VIP Dinonaktifkan.');
+    });
+
+    // Promo countdown ticker
+    setInterval(() => {
+      const cd = document.getElementById('vip-countdown');
+      if (cd) cd.textContent = commercial.getPromoCountdownText();
+    }, 1000);
   }
 
   public switchScreen(targetScreenId: string) {

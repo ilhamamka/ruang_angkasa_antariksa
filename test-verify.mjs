@@ -28,6 +28,7 @@ const criticalFiles = [
   'src/badges-album.ts',
   'src/worksheets.ts',
   'src/parent-guide.ts',
+  'src/commercial.ts',
   'scripts/auto-push.sh',
   'scripts/auto-push.mjs',
   '.git/hooks/post-commit'
@@ -156,7 +157,64 @@ const autoState = spaceAudio.isAutoNarration();
 spaceAudio.toggleAutoNarration();
 assert.strictEqual(spaceAudio.isAutoNarration(), !autoState, 'Toggle auto narration harus mengubah state');
 spaceAudio.toggleAutoNarration(); // restore
-console.log(`✅ 8. Audio engine (TTS, melody synthesizer, balloon hiss, suit equip & auto-narration) terverifikasi valid.\n`);
+// 9. Test Commercial VIP Licensing & Parental Safety Gate
+import { commercial } from './src/commercial.ts';
+commercial.setVIP(false);
+assert.strictEqual(commercial.isVIP(), false, 'VIP harus false di awal pengujian');
+assert.strictEqual(commercial.isStageLocked(1), false, 'Langkah 1 harus selalu gratis demo');
+assert.strictEqual(commercial.isStageLocked(2), true, 'Langkah 2 harus terkunci untuk non-VIP');
+assert.strictEqual(commercial.isStageLocked(3), true, 'Langkah 3 harus terkunci untuk non-VIP');
+assert.strictEqual(commercial.isStageLocked(4), true, 'Langkah 4 harus terkunci untuk non-VIP');
+
+// Test valid code activation
+const actResult1 = commercial.activateLicenseCode('ANTARIKSA2026');
+assert.strictEqual(actResult1.success, true, 'Kode ANTARIKSA2026 harus valid');
+assert.strictEqual(commercial.isVIP(), true, 'VIP harus aktif setelah kode dimasukkan');
+assert.strictEqual(commercial.isStageLocked(2), false, 'Langkah 2 harus terbuka untuk VIP');
+assert.strictEqual(commercial.isStageLocked(4), false, 'Langkah 4 harus terbuka untuk VIP');
+
+// Test dynamic pattern code
+const actResult2 = commercial.activateLicenseCode('VIP-ABCD99');
+assert.strictEqual(actResult2.success, true, 'Kode pola VIP-ABCD99 harus valid');
+
+// Test invalid code
+commercial.setVIP(false);
+const actResult3 = commercial.activateLicenseCode('SALAHKODE');
+assert.strictEqual(actResult3.success, false, 'Kode SALAHKODE harus ditolak');
+assert.strictEqual(commercial.isVIP(), false, 'VIP harus tetap false saat kode salah');
+
+// Test parental gate math
+const gateQ = commercial.generateParentGateQuestion();
+assert(gateQ.question.includes('Berapa'), 'Soal gate orang tua harus berisi pertanyaan');
+assert(typeof gateQ.answer === 'number' && gateQ.answer > 0, 'Jawaban gate harus berupa bilangan positif');
+console.log(`✅ 9. Sistem komersial, lisensi VIP (kode promo & voucher), dan parental safety gate terverifikasi valid.\n`);
+
+// 10. Check all pre-rendered natural audio files exist
+const requiredAudios = [
+  'public/audio/stories/l1_sun.m4a',
+  'public/audio/stories/l1_earth.m4a',
+  'public/audio/stories/l1_moon.m4a',
+  'public/audio/stories/l2_song.m4a',
+  'public/audio/stories/l2_giants.m4a',
+  'public/audio/stories/l3_balloon_rocket.m4a',
+  'public/audio/stories/l3_suit.m4a',
+  'public/audio/stories/l3_zerog.m4a',
+  'public/audio/stories/l4_scale_quiz.m4a',
+  'public/audio/stories/l4_mars_quiz.m4a',
+  'public/audio/stories/fruit_sun.m4a',
+  'public/audio/stories/fruit_mercury.m4a',
+  'public/audio/stories/fruit_venus.m4a',
+  'public/audio/stories/fruit_earth.m4a',
+  'public/audio/stories/fruit_mars.m4a',
+  'public/audio/stories/fruit_jupiter.m4a',
+  'public/audio/stories/fruit_saturn.m4a',
+  'public/audio/stories/fruit_uranus.m4a',
+  'public/audio/stories/fruit_neptune.m4a'
+];
+requiredAudios.forEach(aud => {
+  assert(existsSync(aud), `File audio resmi harus ada: ${aud}`);
+});
+console.log(`✅ 10. Semua 19 file audio narasi suara asli (.m4a) terverifikasi lengkap di public/audio/stories/.\n`);
 
 console.log('🎉 SEMUA PENGUJIAN OTOMATIS BERHASIL DENGAN 100% SUKSES!');
 

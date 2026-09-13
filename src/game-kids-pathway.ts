@@ -5,6 +5,7 @@
 import { KID_LEARNING_STAGES, KID_FRUIT_ANALOGIES, PLANET_TRAIN_ORDER } from './kids-curriculum.ts';
 import { spaceAudio } from './audio.ts';
 import { badgesManager } from './badges-album.ts';
+import { commercial } from './commercial.ts';
 
 export class KidsPathwayManager {
   private container: HTMLElement | null = null;
@@ -60,13 +61,16 @@ export class KidsPathwayManager {
 
         <!-- 4 Step Island Journey Map -->
         <div class="kids-stages-map">
-          ${KID_LEARNING_STAGES.map((s, idx) => `
-            <button class="stage-island-btn ${idx === this.currentStageIdx ? 'active' : ''}" data-stage="${idx}">
-              <span class="island-num">Langkah ${s.stageNumber}</span>
-              <span class="island-icon">${s.icon}</span>
+          ${KID_LEARNING_STAGES.map((s, idx) => {
+            const isLocked = commercial.isStageLocked(s.stageNumber);
+            return `
+            <button class="stage-island-btn ${idx === this.currentStageIdx ? 'active' : ''} ${isLocked ? 'stage-locked' : ''}" data-stage="${idx}">
+              <span class="island-num">Langkah ${s.stageNumber} ${isLocked ? '🔒 VIP' : '✅'}</span>
+              <span class="island-icon">${isLocked ? '🔒' : s.icon}</span>
               <span class="island-name">${s.titleId.split(':')[1] || s.titleId}</span>
             </button>
-          `).join('')}
+            `;
+          }).join('')}
         </div>
 
         <!-- Main Lesson Playground Area -->
@@ -308,6 +312,13 @@ export class KidsPathwayManager {
     stageBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
         const sIdx = parseInt((e.currentTarget as HTMLElement).getAttribute('data-stage') || '0', 10);
+        const targetStage = KID_LEARNING_STAGES[sIdx];
+        if (commercial.isStageLocked(targetStage.stageNumber)) {
+          spaceAudio.playPop(260);
+          window.dispatchEvent(new CustomEvent('open-vip-gate'));
+          return;
+        }
+
         this.currentStageIdx = sIdx;
         this.activeLessonIdx = 0;
         spaceAudio.playPop(520);
