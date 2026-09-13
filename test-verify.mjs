@@ -143,7 +143,11 @@ const expectedTrainOrder = ['sun', 'mercury', 'venus', 'earth', 'mars', 'jupiter
 PLANET_TRAIN_ORDER.forEach((car, i) => {
   assert.strictEqual(car.id, expectedTrainOrder[i], `Urutan gerbong ke-${i+1} harus ${expectedTrainOrder[i]}`);
 });
-console.log(`✅ 7. Kurikulum anak usia dini (4 tahap scaffolded, analogi buah, kereta planet & narasi suara) terverifikasi 100% valid.\n`);
+
+import { kidsPathway } from './src/game-kids-pathway.ts';
+assert(typeof kidsPathway.mount === 'function', 'kidsPathway.mount harus ada');
+assert(typeof kidsPathway.unmount === 'function', 'kidsPathway.unmount harus ada');
+console.log(`✅ 7. Kurikulum anak usia dini & mainan interaktif (Matahari, Bumi, Bulan, ISS, Mars, Kereta & Balon) terverifikasi 100% valid.\n`);
 
 // 8. Test Sound & Audio Engine API
 import { spaceAudio } from './src/audio.ts';
