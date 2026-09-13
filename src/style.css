@@ -5325,5 +5325,599 @@ body {
   white-space: nowrap;
 }
 
+/* ==========================================================================
+   OBSERVATORIUM LANGIT MALAM INI (SKY TONIGHT WIDGET)
+   ========================================================================== */
+.home-sky-mount {
+  margin: 20px 0 28px 0;
+}
+
+.sky-tonight-card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(10, 15, 30, 0.95) 100%);
+  border: 1px solid rgba(254, 240, 138, 0.35);
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 24px rgba(254, 240, 138, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sky-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+}
+
+.sky-title-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 13px;
+  color: #fef08a;
+  letter-spacing: 0.5px;
+}
+
+.live-date-pill {
+  background: rgba(254, 240, 138, 0.15);
+  color: #fef08a;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+}
+
+.btn-audio-sky {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: none;
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.btn-audio-sky:hover {
+  transform: scale(1.04);
+}
+
+.sky-card-body {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.sky-moon-visual-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 90px;
+}
+
+.moon-illum-badge {
+  background: #1e293b;
+  border: 1px solid #475569;
+  color: #fef08a;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.sky-moon-info-col {
+  flex: 1 1 300px;
+}
+
+.moon-phase-name {
+  margin: 0 0 6px 0;
+  font-size: 20px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.moon-cultural-note {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.sky-tonight-challenge {
+  background: rgba(30, 41, 59, 0.7);
+  border-left: 4px solid #fde047;
+  padding: 8px 12px;
+  border-radius: 0 8px 8px 0;
+}
+
+.sky-tonight-challenge strong {
+  display: block;
+  font-size: 11px;
+  color: #fde047;
+  margin-bottom: 2px;
+}
+
+.sky-tonight-challenge p {
+  margin: 0;
+  font-size: 12px;
+  color: #e2e8f0;
+}
+
+.sky-planets-ticker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  background: rgba(10, 15, 26, 0.6);
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sky-planet-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sky-planet-item .p-icon {
+  font-size: 20px;
+}
+
+.sky-planet-item strong {
+  display: block;
+  font-size: 12px;
+  color: #ffffff;
+}
+
+.sky-planet-item small {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* ==========================================================================
+   AVATAR CUSTOMIZER STUDIO MODAL
+   ========================================================================== */
+.avatar-studio-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 7, 18, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.25s ease;
+}
+
+.avatar-studio-dialog {
+  background: #0f172a;
+  border: 1px solid var(--space-cyan, #00d2ff);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(0, 210, 255, 0.25);
+  border-radius: 16px;
+  max-width: 620px;
+  width: 100%;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.avatar-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 12px;
+}
+
+.avatar-dialog-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.btn-close-avatar-studio {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.avatar-studio-grid {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 20px;
+  align-items: center;
+}
+
+@media (max-width: 580px) {
+  .avatar-studio-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.avatar-preview-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: #090d1a;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.avatar-preview-render {
+  width: 130px;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-preview-badge {
+  font-size: 10px;
+  font-weight: 800;
+  color: #38bdf8;
+  text-align: center;
+}
+
+.avatar-controls-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.control-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  color: #cbd5e1;
+  margin-bottom: 6px;
+}
+
+.pill-options-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.btn-opt {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-opt.active {
+  background: var(--space-cyan, #00d2ff);
+  color: #090d1a;
+  border-color: #ffffff;
+  font-weight: 800;
+}
+
+.avatar-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 14px;
+}
+
+.btn-cancel-avatar {
+  background: transparent;
+  border: 1px solid #475569;
+  color: #94a3b8;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-save-avatar {
+  background: linear-gradient(135deg, #00d2ff, #2563eb);
+  border: none;
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 210, 255, 0.4);
+}
+
+/* ==========================================================================
+   DIGITAL COLORING STUDIO & DUAL WORKSHEETS TABS
+   ========================================================================== */
+.worksheets-mode-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.btn-ws-mode {
+  flex: 1 1 240px;
+  background: #0f172a;
+  border: 2px solid #334155;
+  color: #94a3b8;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-ws-mode.active {
+  background: linear-gradient(135deg, rgba(0, 210, 255, 0.2), rgba(59, 130, 246, 0.2));
+  border-color: var(--space-cyan, #00d2ff);
+  color: #ffffff;
+  box-shadow: 0 0 20px rgba(0, 210, 255, 0.2);
+}
+
+.ws-tab-pane {
+  display: none;
+}
+
+.ws-tab-pane.active {
+  display: block;
+}
+
+.coloring-studio-container {
+  background: rgba(13, 20, 36, 0.9);
+  border: 1px solid rgba(0, 210, 255, 0.3);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.coloring-studio-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 16px;
+}
+
+.studio-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--space-cyan, #00d2ff);
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.studio-title {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.studio-desc {
+  margin: 0;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.coloring-templates-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-template-pill {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-template-pill.active {
+  background: var(--space-cyan, #00d2ff);
+  color: #090d1a;
+  border-color: #ffffff;
+  font-weight: 800;
+}
+
+.coloring-workbench-grid {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .coloring-workbench-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.coloring-canvas-wrapper {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #334155;
+}
+
+#digital-coloring-canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.coloring-tools-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tool-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tool-sec-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mode-tools-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.btn-color-tool {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #f1f5f9;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.btn-color-tool.active {
+  background: var(--space-cyan, #00d2ff);
+  color: #090d1a;
+  border-color: #ffffff;
+  font-weight: 800;
+}
+
+.brush-size-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-size-pill {
+  flex: 1;
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #94a3b8;
+  border-radius: 6px;
+  padding: 6px 0;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-size-pill.active {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #93c5fd;
+}
+
+.color-swatches-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.color-swatch-dot {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.color-swatch-dot:hover {
+  transform: scale(1.15);
+}
+
+.color-swatch-dot.active {
+  border-color: #ffffff;
+  box-shadow: 0 0 10px currentColor;
+  transform: scale(1.2);
+}
+
+.canvas-actions-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 12px;
+}
+
+.btn-canvas-action {
+  background: #334155;
+  border: none;
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-canvas-action:hover {
+  background: #475569;
+}
+
+.btn-save-art {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.btn-save-art:hover {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+}
+
+
 
 

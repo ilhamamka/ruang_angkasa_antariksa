@@ -5,6 +5,7 @@ export class SpaceSoundEngine {
   private ctx: AudioContext | null = null;
   private soundEnabled: boolean = true;
   private bgmEnabled: boolean = true;
+  private bgmMood: 'adventure' | 'peaceful' | 'focus' = 'adventure';
   private bgmTimer: number | null = null;
   private lang: 'id' | 'en' = 'id';
   private autoNarration: boolean = true;
@@ -659,40 +660,115 @@ export class SpaceSoundEngine {
     });
   }
 
+  public setBgmMood(mood: 'adventure' | 'peaceful' | 'focus') {
+    this.bgmMood = mood;
+    if (this.bgmEnabled) {
+      this.stopBgm();
+      this.startBgm();
+    }
+  }
+
+  public getBgmMood(): 'adventure' | 'peaceful' | 'focus' {
+    return this.bgmMood;
+  }
+
+  public getBgmMoodLabel(): string {
+    switch (this.bgmMood) {
+      case 'adventure': return '🚀 Petualangan Ceria';
+      case 'peaceful': return '✨ Santai Tidur Bintang';
+      case 'focus': return '🧠 Fokus Belajar';
+    }
+  }
+
+  public cycleBgmMood(): string {
+    const moods: Array<'adventure' | 'peaceful' | 'focus'> = ['adventure', 'peaceful', 'focus'];
+    const nextIdx = (moods.indexOf(this.bgmMood) + 1) % moods.length;
+    this.setBgmMood(moods[nextIdx]);
+    return this.getBgmMoodLabel();
+  }
+
   public startBgm() {
     if (!this.bgmEnabled) return;
     this.initCtx();
     if (!this.ctx) return;
     if (this.bgmTimer) return;
 
-    const scale = [261.63, 329.63, 392.00, 493.88, 523.25, 659.25];
     let step = 0;
 
-    const playNextNote = () => {
+    const playNextBar = () => {
       if (!this.bgmEnabled || !this.ctx) return;
-      const noteFreq = scale[step % scale.length];
-      step++;
-
       const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
 
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(noteFreq, now);
+      if (this.bgmMood === 'peaceful') {
+        // Peaceful deep cosmic pad chord (Cmaj9 / Fmaj7)
+        const chordCycles = [
+          [130.81, 164.81, 196.00, 246.94, 293.66], // C3, E3, G3, B3, D4
+          [174.61, 220.00, 261.63, 329.63, 392.00]  // F3, A3, C4, E4, G4
+        ];
+        const chord = chordCycles[step % chordCycles.length];
+        step++;
 
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.035, now + 0.4);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+        chord.forEach((freq, i) => {
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
 
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
+          osc.type = i === 0 ? 'sine' : 'triangle';
+          osc.frequency.setValueAtTime(freq, now);
 
-      osc.start(now);
-      osc.stop(now + 1.9);
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(0.02, now + 1.2);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 3.8);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 4.0);
+        });
+      } else if (this.bgmMood === 'focus') {
+        // Steady warm pentatonic marimba pulses
+        const pentatonic = [220.00, 261.63, 293.66, 329.63, 392.00];
+        const note = pentatonic[step % pentatonic.length];
+        step++;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(note, now);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.03, now + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 1.3);
+      } else {
+        // Adventure: Bright Lydian arpeggios with bell overtone
+        const adventureScale = [261.63, 329.63, 369.99, 392.00, 493.88, 587.33];
+        const note = adventureScale[step % adventureScale.length];
+        step++;
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(note, now);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.04, now + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 1.6);
+      }
     };
 
-    playNextNote();
-    this.bgmTimer = (typeof window !== 'undefined' ? window.setInterval : setInterval)(playNextNote, 1600) as unknown as number;
+    playNextBar();
+    const intervalMs = this.bgmMood === 'peaceful' ? 3800 : (this.bgmMood === 'focus' ? 1800 : 1300);
+    this.bgmTimer = (typeof window !== 'undefined' ? window.setInterval : setInterval)(playNextBar, intervalMs) as unknown as number;
   }
 
   public stopBgm() {

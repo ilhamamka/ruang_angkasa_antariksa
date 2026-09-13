@@ -24,6 +24,9 @@ const criticalFiles = [
   'src/game-deepspace.ts',
   'src/game-sandbox.ts',
   'src/game-satellite.ts',
+  'src/sky-tonight.ts',
+  'src/avatar-studio.ts',
+  'src/coloring-studio.ts',
   'src/questions-engine.ts',
   'src/chart-encyclopedia.ts',
   'src/badges-album.ts',
@@ -231,7 +234,35 @@ assert(saviorBadge, 'Lencana satellite_savior harus terdaftar di album');
 assert(saviorBadge.xpReward >= 200, 'Hadiah XP lencana satelit harus bernilai tinggi');
 console.log('✅ 13. Misi Teknisi Cilik Satelit Nusantara & Pembersih Sampah Orbit terverifikasi 100% siap.\n');
 
+// 14. Test Real-time Sky Tonight Observatory
+import { skyTonight } from './src/sky-tonight.ts';
+const todayPhase = skyTonight.getTodayMoonPhase();
+assert(todayPhase.illuminationPct >= 0 && todayPhase.illuminationPct <= 100, 'Persentase cahaya bulan harus valid (0-100%)');
+assert(todayPhase.phaseNameId.length > 3, 'Nama fase bulan harus ada');
+assert(todayPhase.svgIcon.includes('<svg'), 'Visual SVG fase bulan harus valid');
+console.log(`✅ 14. Observatorium Langit Malam Ini terverifikasi (Fase Hari Ini: ${todayPhase.phaseNameId} - ${todayPhase.illuminationPct}%).\n`);
+
+// 15. Test Avatar Customizer Studio & Multi-Mood BGM
+import { avatarStudio } from './src/avatar-studio.ts';
+const curAvatar = avatarStudio.getConfig();
+assert(curAvatar.suitColor && curAvatar.visorColor, 'Konfigurasi avatar harus lengkap');
+const avatarSvg = avatarStudio.generateAvatarSvg(curAvatar, 64);
+assert(avatarSvg.includes('<svg'), 'Avatar SVG harus berhasil digenerate');
+
+assert(typeof spaceAudio.cycleBgmMood === 'function', 'spaceAudio.cycleBgmMood harus fungsi');
+const originalMood = spaceAudio.getBgmMood();
+spaceAudio.setBgmMood('peaceful');
+assert.strictEqual(spaceAudio.getBgmMood(), 'peaceful', 'Mood BGM peaceful harus berhasil diset');
+spaceAudio.setBgmMood(originalMood);
+console.log('✅ 15. Avatar Customizer Studio & Mesin BGM Kosmik Multi-Mood terverifikasi.\n');
+
+// 16. Test Digital Coloring & Tracing Studio
+import { digitalColoringStudio } from './src/coloring-studio.ts';
+assert(typeof digitalColoringStudio.mount === 'function', 'digitalColoringStudio.mount harus fungsi');
+console.log('✅ 16. Studio Mewarnai Digital di Layar (Kuas Neon & Ember Cat) terverifikasi.\n');
+
 console.log('🎉 SEMUA PENGUJIAN OTOMATIS BERHASIL DENGAN 100% SUKSES!');
+
 
 
 

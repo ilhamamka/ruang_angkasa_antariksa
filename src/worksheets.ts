@@ -3,10 +3,12 @@
 
 import { badgesManager } from './badges-album.ts';
 import { spaceAudio } from './audio.ts';
+import { digitalColoringStudio } from './coloring-studio.ts';
 
 export class WorksheetsManager {
   private container: HTMLElement | null = null;
   private studentName: string = 'Astronot Cilik Indonesia';
+  private activeTab: 'digital' | 'print' = 'digital';
 
   public mount(container: HTMLElement) {
     this.container = container;
@@ -18,24 +20,41 @@ export class WorksheetsManager {
 
     this.container.innerHTML = `
       <div class="worksheets-view">
-        <!-- Header -->
-        <div class="worksheets-header">
-          <div>
-            <h2>🖨️ Lembar Kerja Cetak & Sertifikat Resmi Astronot</h2>
-            <p>Unduh atau cetak langsung materi belajar aktivitas fisik anak di rumah atau di sekolah!</p>
-          </div>
-          <div class="worksheets-actions no-print">
-            <button class="btn-print-trigger" id="btn-print-page">
-              🖨️ Cetak / Simpan PDF
-            </button>
-            <button class="btn-download-png" id="btn-download-cert-png">
-              📥 Unduh Piagam (PNG HD)
-            </button>
-          </div>
+        <!-- Dual Mode Navigation Bar -->
+        <div class="worksheets-mode-tabs no-print">
+          <button class="btn-ws-mode ${this.activeTab === 'digital' ? 'active' : ''}" id="tab-btn-digital" type="button">
+            <span>🎨 Studio Mewarnai Digital (Langsung di Layar)</span>
+          </button>
+          <button class="btn-ws-mode ${this.activeTab === 'print' ? 'active' : ''}" id="tab-btn-print" type="button">
+            <span>🖨️ Lembar Cetak Kertas & Sertifikat Resmi</span>
+          </button>
         </div>
 
-        <!-- Section 1: Official Astronaut Certificate -->
-        <div class="certificate-section-wrap">
+        <!-- Mode 1: Digital Coloring Studio Container -->
+        <div id="ws-content-digital" class="ws-tab-pane ${this.activeTab === 'digital' ? 'active' : ''}">
+          <div id="digital-coloring-mount"></div>
+        </div>
+
+        <!-- Mode 2: Printable Worksheets & Official Certificate Container -->
+        <div id="ws-content-print" class="ws-tab-pane ${this.activeTab === 'print' ? 'active' : ''}">
+          <!-- Header -->
+          <div class="worksheets-header">
+            <div>
+              <h2>🖨️ Lembar Kerja Cetak & Sertifikat Resmi Astronot</h2>
+              <p>Unduh atau cetak langsung materi belajar aktivitas fisik anak di rumah atau di sekolah!</p>
+            </div>
+            <div class="worksheets-actions no-print">
+              <button class="btn-print-trigger" id="btn-print-page">
+                🖨️ Cetak / Simpan PDF
+              </button>
+              <button class="btn-download-png" id="btn-download-cert-png">
+                📥 Unduh Piagam (PNG HD)
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 1: Official Astronaut Certificate -->
+          <div class="certificate-section-wrap">
           <div class="cert-input-row no-print">
             <label for="input-student-name">Masukkan Nama Anak / Siswa:</label>
             <input type="text" id="input-student-name" value="${this.studentName}" placeholder="Ketik nama lengkap..." />
@@ -176,10 +195,40 @@ export class WorksheetsManager {
     `;
 
     this.attachEvents();
+    if (this.activeTab === 'digital') {
+      const digitalMount = this.container.querySelector('#digital-coloring-mount') as HTMLElement | null;
+      if (digitalMount) digitalColoringStudio.mount(digitalMount);
+    }
   }
 
   private attachEvents() {
     if (!this.container) return;
+
+    // Tab Switching
+    const tabDigital = this.container.querySelector('#tab-btn-digital');
+    const tabPrint = this.container.querySelector('#tab-btn-print');
+    const paneDigital = this.container.querySelector('#ws-content-digital');
+    const panePrint = this.container.querySelector('#ws-content-print');
+
+    tabDigital?.addEventListener('click', () => {
+      this.activeTab = 'digital';
+      tabDigital.classList.add('active');
+      tabPrint?.classList.remove('active');
+      paneDigital?.classList.add('active');
+      panePrint?.classList.remove('active');
+      spaceAudio.playPop(520);
+      const digitalMount = this.container?.querySelector('#digital-coloring-mount') as HTMLElement | null;
+      if (digitalMount) digitalColoringStudio.mount(digitalMount);
+    });
+
+    tabPrint?.addEventListener('click', () => {
+      this.activeTab = 'print';
+      tabPrint.classList.add('active');
+      tabDigital?.classList.remove('active');
+      panePrint?.classList.add('active');
+      paneDigital?.classList.remove('active');
+      spaceAudio.playPop(480);
+    });
 
     const nameInput = this.container.querySelector('#input-student-name') as HTMLInputElement;
     const nameDisplay = this.container.querySelector('#cert-display-name');

@@ -13,6 +13,8 @@ import { parentGuideManager } from './parent-guide.ts';
 import { quizController } from './questions-engine.ts';
 import { kidsPathway } from './game-kids-pathway.ts';
 import { satelliteMission } from './game-satellite.ts';
+import { skyTonight } from './sky-tonight.ts';
+import { avatarStudio } from './avatar-studio.ts';
 import { commercial } from './commercial.ts';
 import { confetti } from './confetti.ts';
 
@@ -32,6 +34,8 @@ class SpaceApp {
     this.initNavigation();
     this.initAudioAndControls();
     this.initCommercialAndVIP();
+    this.initSkyTonightWidget();
+    this.initAvatarCustomizer();
     this.updateHeroStats();
     this.mountCurrentScreen();
   }
@@ -143,12 +147,25 @@ class SpaceApp {
       });
     }
 
-    // BGM Ambient Pad toggle
+    // BGM Ambient Multi-Mood toggle & cycle
     const bgmBtn = document.getElementById('btn-toggle-bgm');
     if (bgmBtn) {
+      const updateBgmLabel = () => {
+        bgmBtn.title = `Musik: ${spaceAudio.getBgmMoodLabel()} (Klik untuk nyala/mati, klik ganda untuk ganti suasana)`;
+      };
+      updateBgmLabel();
+
       bgmBtn.addEventListener('click', () => {
         const enabled = spaceAudio.toggleBgm();
         bgmBtn.textContent = enabled ? '🎵' : '🎼';
+        updateBgmLabel();
+      });
+
+      bgmBtn.addEventListener('dblclick', () => {
+        spaceAudio.cycleBgmMood();
+        updateBgmLabel();
+        spaceAudio.playCelestialChime();
+        confetti.fire(0.5, 0.1, 25);
       });
     }
 
@@ -472,6 +489,32 @@ class SpaceApp {
         if (mountPoint) parentGuideManager.mount(mountPoint);
         break;
       }
+    }
+  }
+
+  private initSkyTonightWidget() {
+    const mount = document.getElementById('home-sky-tonight-mount');
+    if (mount) skyTonight.renderWidget(mount);
+  }
+
+  private initAvatarCustomizer() {
+    const updateAvatarSlot = () => {
+      const slot = document.getElementById('topbar-avatar-slot');
+      if (slot) {
+        slot.innerHTML = avatarStudio.generateAvatarSvg(avatarStudio.getConfig(), 32);
+      }
+    };
+
+    updateAvatarSlot();
+
+    const avatarBtn = document.getElementById('btn-custom-avatar');
+    if (avatarBtn) {
+      avatarBtn.addEventListener('click', () => {
+        avatarStudio.openAvatarModal(() => {
+          updateAvatarSlot();
+          this.updateHeroStats();
+        });
+      });
     }
   }
 
